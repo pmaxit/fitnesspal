@@ -39,10 +39,25 @@ cd fitnesspal
 flutter pub get
 ```
 
-3. Run the app:
+### Run the App
+
+**Option 1: macOS Desktop (Recommended)**
 ```bash
-flutter run
+flutter run -d macos
 ```
+
+**Option 2: Chrome Web**
+```bash
+./run-web.sh
+# Visit http://localhost:8000
+```
+
+**Option 3: iOS Device** (Physical device required)
+```bash
+flutter run -d <device-id>
+```
+
+See [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) for detailed setup instructions.
 
 ### Project Structure
 

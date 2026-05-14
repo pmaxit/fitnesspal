@@ -177,8 +177,8 @@ class MealsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: border),
         borderRadius: BorderRadius.circular(20),
-        overflow: Hidden,
       ),
+      clipBehavior: Clip.hardEdge,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

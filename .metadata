@@ -1,33 +1,30 @@
 # This file tracks properties of this Flutter project.
-# Used by Flutter tooling to track, build and compile assets.
+# Used by Flutter tool to assess capabilities and perform upgrades etc.
 #
-# This file should be version controlled.
+# This file should be version controlled and should not be manually edited.
 
 version:
-  revision: 5e9d1e18e77e38ff39bdd4a0fac0c1c5221b5f46
-  channel: stable
+  revision: "80c2e84975bbd28ecf5f8d4bd4ca5a2490bfc819"
+  channel: "stable"
 
 project_type: app
 
-# Tracks metadata for the `flutter pub get` command
-pubspec:
-  mtime: 2026-05-14T16:00:00.000000Z
-
-# Non-dependent properties
+# Tracks metadata for the flutter migrate command
 migration:
   platforms:
     - platform: root
-      create_base: true
-    - platform: android
-      create_base: true
-    - platform: ios
-      create_base: true
+      create_revision: 80c2e84975bbd28ecf5f8d4bd4ca5a2490bfc819
+      base_revision: 80c2e84975bbd28ecf5f8d4bd4ca5a2490bfc819
     - platform: macos
-      create_base: false
-    - platform: web
-      create_base: false
-    - platform: windows
-      create_base: false
-    - platform: linux
-      create_base: false
-  ios_language_tag_source: null
+      create_revision: 80c2e84975bbd28ecf5f8d4bd4ca5a2490bfc819
+      base_revision: 80c2e84975bbd28ecf5f8d4bd4ca5a2490bfc819
+
+  # User provided section
+
+  # List of Local paths (relative to this file) that should be
+  # ignored by the migrate tool.
+  #
+  # Files that are not part of the templates will be ignored by default.
+  unmanaged_files:
+    - 'lib/main.dart'
+    - 'ios/Runner.xcodeproj/project.pbxproj'

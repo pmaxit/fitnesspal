@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
           child: Row(
             children: [
-              _navTab(0, Icons.home, 'Dashboard'),
+              _navTab(0, Icons.home, 'Home'),
               _navTab(1, Icons.show_chart, 'Activity'),
               _navTab(2, Icons.restaurant, 'Meals'),
               _navTab(3, Icons.repeat, 'Habits'),
