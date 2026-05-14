@@ -1,0 +1,33 @@
+# This file tracks properties of this Flutter project.
+# Used by Flutter tooling to track, build and compile assets.
+#
+# This file should be version controlled.
+
+version:
+  revision: 5e9d1e18e77e38ff39bdd4a0fac0c1c5221b5f46
+  channel: stable
+
+project_type: app
+
+# Tracks metadata for the `flutter pub get` command
+pubspec:
+  mtime: 2026-05-14T16:00:00.000000Z
+
+# Non-dependent properties
+migration:
+  platforms:
+    - platform: root
+      create_base: true
+    - platform: android
+      create_base: true
+    - platform: ios
+      create_base: true
+    - platform: macos
+      create_base: false
+    - platform: web
+      create_base: false
+    - platform: windows
+      create_base: false
+    - platform: linux
+      create_base: false
+  ios_language_tag_source: null
