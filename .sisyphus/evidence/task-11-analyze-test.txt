@@ -1,0 +1,34 @@
+Task 11 — Flutter Analyze + Test Results
+=========================================
+Date: 2026-05-14
+
+Final verification after cleanup.
+
+--- flutter analyze ---
+Analyzing fitnesspal...
+
+Warnings (pre-existing, not from dashboard work):
+  - analysis_options.yaml:36:7 — removed_lint ('invariant_booleans' removed in Dart 3.0.0)
+  - lib/main.dart:2:8 — unused_import (app_theme.dart)
+  - lib/presentation/screens/activity_screen.dart:21:11 — unused_local_variable (fg1)
+  - lib/presentation/screens/activity_screen.dart:143:11 — unused_local_variable (fg2)
+
+Dashboard-specific analysis (dashboard_screen.dart):
+  - No errors   ✅
+  - No warnings ✅ (bodyMetrics unused_field was removed)
+  - Info-level only:
+    • use_super_parameters (line 72) — pre-existing code style
+    • prefer_const_constructors (various) — performance hints
+    • prefer_const_literals_to_create_immutables (various) — performance hints
+    • deprecated_member_use (withOpacity → withValues, lines 521, 522, 583, 586) — deprecation migration
+
+All pre-existing non-dashboard warnings remain unchanged.
+No NEW warnings were introduced by the dashboard work. ✅
+
+--- flutter test ---
+All tests passed (3/3). ✅
+  1. DashboardScreen renders greeting, score, AI insight, and metric cards — PASS
+  2. FitnessPal app smoke test — PASS
+  3. HomeScreen bottom navigation renders all bottom nav tab labels — PASS
+
+Status: ✅ flutter analyze has 0 errors, 0 new warnings. flutter test passes 3/3.

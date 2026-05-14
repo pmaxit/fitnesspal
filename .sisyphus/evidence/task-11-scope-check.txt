@@ -1,0 +1,34 @@
+Task 11 — Scope Check
+======================
+Date: 2026-05-14
+
+Verification: No scope creep in the final implementation.
+
+Reviewed for scope creep:
+
+1. No extra screens ❌ N/A — no new screens beyond the planned DashboardScreen
+   and existing screens (HomeScreen, ActivityScreen, FitnessPalApp)
+
+2. No live data ✅ — All data is static const in _DashboardData class.
+   No imports from providers, services, repositories, or API clients.
+
+3. No navigation rewrite ✅ — The existing navigation pattern (HomeScreen with
+   IndexedStack + BottomNavigationBar) is preserved. No new routing added.
+
+4. No unnecessary dependencies ✅ — Only 4 imports in dashboard_screen.dart:
+   - flutter/material.dart (required for UI)
+   - core/theme/app_theme.dart (required for radius values)
+   - core/theme/colors.dart (required for color constants)
+   - presentation/widgets/progress_ring.dart (required for ProgressRing widget)
+
+5. No state management ✅ — No Provider, Riverpod, BLoC, or other state management.
+   Widget is purely presentational with props (isDarkMode).
+
+6. No API calls ✅ — No HTTP, no async data loading.
+
+7. No dead code ✅ — All static const values are used in widget tree.
+   (Removed unused bodyMetrics field.)
+
+8. No broad ignores ✅ — No `// ignore` or `as dynamic` workarounds added.
+
+Status: ✅ No scope creep. Implementation is contained, minimal, and clean.

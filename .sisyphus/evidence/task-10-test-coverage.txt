@@ -1,0 +1,36 @@
+Task 10 — Test Coverage / Assertions
+=====================================
+Date: 2026-05-14
+
+Test file: test/dashboard_screen_test.dart
+
+Group: DashboardScreen
+  Test: renders greeting, score, AI insight, and metric cards
+    Assertions:
+      1. expect(find.text('Hi Maya'), findsOneWidget)           — greeting
+      2. expect(find.text('84'), findsWidgets)                  — wellness score (in ring + centerWidget)
+      3. expect(find.text("Today's Plan"), findsOneWidget)      — CTA label
+      4. expect(find.textContaining('Your recovery is improving'), findsWidgets) — AI insight
+      5. expect(find.text('Calories'), findsOneWidget)          — metric card label
+      6. expect(find.text('Sleep'), findsWidgets)               — metric card label (also in body metrics)
+      7. expect(find.text('Steps'), findsOneWidget)             — metric card label
+      8. expect(find.text('Water'), findsOneWidget)             — metric card label
+
+Group: HomeScreen bottom navigation
+  Test: renders all bottom nav tab labels
+    Assertions:
+      9. expect(find.text('Home'), findsOneWidget)              — bottom nav tab
+      10. expect(find.text('Activity'), findsOneWidget)         — bottom nav tab
+      11. expect(find.text('Meals'), findsOneWidget)            — bottom nav tab
+      12. expect(find.text('Habits'), findsOneWidget)           — bottom nav tab
+      13. expect(find.text('Profile'), findsOneWidget)          — bottom nav tab
+
+Test file: test/widget_test.dart
+  Test: FitnessPal app smoke test
+    Assertions:
+      14. expect(find.text('Hi Maya'), findsOneWidget)          — app renders greeting
+      15. expect(find.text('Home'), findsOneWidget)             — bottom nav present
+
+Total assertions: 15 across 3 tests
+
+Status: ✅ Test coverage covers greeting, wellness score, AI insight, metric cards, CTA, bottom nav tabs.

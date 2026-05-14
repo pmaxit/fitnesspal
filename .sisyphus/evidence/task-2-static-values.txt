@@ -1,0 +1,26 @@
+Task 2 — Static Values
+=======================
+Date: 2026-05-14
+
+Verification: All static values and their presence in the widget tree.
+
+The _DashboardData class (lib/presentation/screens/dashboard_screen.dart) defines all
+static const values used by the dashboard:
+
+  Static Field              | Value                                    | Used In Widget Tree
+  --------------------------|------------------------------------------|--------------------
+  greeting                  | 'Hi Maya'                                | Header greeting Text
+  dateSummary               | 'Wednesday, May 14 • 72°F • Mostly Sunny'| Header date/weather Text
+  wellnessScore             | 84                                       | _WellnessScoreRing (percentage, value, centerWidget)
+  aiInsight                 | 'Your recovery is improving after better  | AI insight Text in CTA section
+                            |  sleep consistency.'                      |
+  ctaLabel                  | "Today's Plan"                           | CTA button Text
+  aiChipLabel               | 'AI Coach'                               | AI Coach chip + insight badge
+  metricCards[0]            | Calories: 1,840 kcal, 72%, ↑ +3%         | _MetricCard (row 1, col 1)
+  metricCards[1]            | Sleep: 7.5 hrs, 75%, ↑ +12%              | _MetricCard (row 1, col 2)
+  metricCards[2]            | Steps: 8,432 steps, 64%, ↓ -2%           | _MetricCard (row 2, col 1)
+  metricCards[3]            | Water: 6 cups, 60%, → 0%                 | _MetricCard (row 2, col 2)
+
+All static values are rendered in the widget tree. No static value is orphaned.
+
+Status: ✅ All static values are present and rendered.

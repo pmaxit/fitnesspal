@@ -1,0 +1,28 @@
+Task 4 — Bottom Navigation
+===========================
+Date: 2026-05-14
+
+Verification: 5 tabs with Home active.
+
+The HomeScreen (lib/presentation/screens/home_screen.dart) implements bottom navigation with
+exactly 5 tabs:
+
+  Index | Label      | Icon                  | Screen
+  ------|------------|-----------------------|--------------------------
+  0     | Home       | Icons.home_rounded     | DashboardScreen
+  1     | Activity   | Icons.bar_chart_rounded| ActivityScreen
+  2     | Meals      | Icons.restaurant_rounded| (placeholder)
+  3     | Habits     | Icons.favorite_rounded | (placeholder)
+  4     | Profile    | Icons.person_rounded   | (placeholder)
+
+- BottomNavigationBar has 5 items
+- Default selectedIndex is 0 (Home tab)
+- Uses IndexedStack to preserve state across tab switches
+- Home tab shows DashboardScreen
+
+Test verification (dashboard_screen_test.dart):
+  - Test "HomeScreen bottom navigation renders all bottom nav tab labels" passes
+  - Asserts: find.text('Home'), find.text('Activity'), find.text('Meals'),
+    find.text('Habits'), find.text('Profile') all find one widget each
+
+Status: ✅ 5 bottom nav tabs present. Home tab (index 0) is active by default.

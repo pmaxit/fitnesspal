@@ -1,0 +1,20 @@
+Task 1 — Route Scope
+=====================
+Date: 2026-05-14
+
+Verification: No detached demo route exists.
+
+The DashboardScreen is integrated into the app via HomeScreen (lib/presentation/screens/home_screen.dart),
+which uses IndexedStack to switch between screens. The DashboardScreen is the first tab (index 0)
+in the bottom navigation.
+
+There is no standalone /demo or /dashboard-only route registered in the app's routing.
+The app uses a single MaterialApp with HomeScreen as the home, and DashboardScreen is only
+reachable through the bottom navigation tab system.
+
+Files checked:
+- lib/presentation/app.dart — uses FitnessPalApp with HomeScreen as home
+- lib/presentation/screens/home_screen.dart — uses IndexedStack with DashboardScreen at index 0
+- lib/main.dart — entry point, no extra routes
+
+Status: ✅ No detached demo route. DashboardScreen is only accessible via HomeScreen bottom nav.

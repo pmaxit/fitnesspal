@@ -1,0 +1,26 @@
+Task 5 — Header Tap Handlers
+=============================
+Date: 2026-05-14
+
+Verification: Inert tap handlers in the header area.
+
+The header area contains two GestureDetector widgets with inert (empty) onTap handlers:
+
+1. Notification bell icon (line ~106):
+   GestureDetector(
+     onTap: () {},
+     child: Stack(children: [Icon(Icons.notifications_outlined), ...]),
+   )
+   - onTap is an empty lambda — no navigation, no dialog, no state change
+
+2. AI Coach chip (line ~143):
+   GestureDetector(
+     onTap: () {},
+     child: Container(... with AI chip styling ...),
+   )
+   - onTap is an empty lambda — no navigation, no dialog, no state change
+
+Both tap handlers are inert (no-op). They are placeholders for future functionality
+and do not trigger any side effects.
+
+Status: ✅ Both header tap handlers (notification bell, AI Coach chip) are inert (empty onTap).

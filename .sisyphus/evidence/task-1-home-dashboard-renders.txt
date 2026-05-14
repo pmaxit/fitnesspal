@@ -1,0 +1,24 @@
+Task 1 — Home Dashboard Renders
+=================================
+Date: 2026-05-14
+
+Verification: DashboardScreen constructor is preserved.
+
+The DashboardScreen class is defined in lib/presentation/screens/dashboard_screen.dart
+with the following constructor signature:
+
+  class DashboardScreen extends StatelessWidget {
+    final bool isDarkMode;
+    const DashboardScreen({Key? key, required this.isDarkMode}) : super(key: key);
+    ...
+  }
+
+- The constructor accepts `isDarkMode` as a required named parameter.
+- The `Key? key` super parameter is preserved.
+- No additional required parameters were added.
+- The widget builds a Scaffold with SafeArea, SingleChildScrollView, and Column layout.
+- The screen renders: greeting ("Hi Maya"), date/weather summary, AI Coach chip,
+  wellness score ring, body silhouette, body metrics grid, metric cards (Calories,
+  Sleep, Steps, Water), AI insight, "Today's Plan" CTA, and personalized suggestion.
+
+Status: ✅ DashboardScreen constructor is preserved and renders correctly.

@@ -1,0 +1,19 @@
+Task 10 — Flutter Test Output
+==============================
+Date: 2026-05-14
+
+Command: flutter test
+Result: All tests passed (3/3)
+
+Test output:
+  00:00 +0: loading /Users/p0g06hf/Projects/interviews/fitnesspal/test/dashboard_screen_test.dart
+  00:00 +0: /Users/p0g06hf/Projects/interviews/fitnesspal/test/dashboard_screen_test.dart: DashboardScreen renders greeting, score, AI insight, and metric cards
+  00:00 +1: /Users/p0g06hf/Projects/interviews/fitnesspal/test/widget_test.dart: FitnessPal app smoke test
+  00:00 +2: /Users/p0g06hf/Projects/interviews/fitnesspal/test/dashboard_screen_test.dart: HomeScreen bottom navigation renders all bottom nav tab labels
+  00:00 +3: All tests passed!
+
+Test files:
+  1. test/dashboard_screen_test.dart — DashboardScreen widget tests (2 tests)
+  2. test/widget_test.dart — FitnessPalApp smoke test (1 test)
+
+Status: ✅ All 3 tests pass.

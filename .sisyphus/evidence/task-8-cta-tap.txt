@@ -1,0 +1,33 @@
+Task 8 — CTA Tap Handler
+=========================
+Date: 2026-05-14
+
+Verification: CTA tap is safe (inert).
+
+The "Today's Plan" CTA button (line ~304) uses:
+
+  GestureDetector(
+    onTap: () {},
+    child: Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(...),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [...],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Today's Plan"),
+          Icon(Icons.arrow_forward),
+        ],
+      ),
+    ),
+  )
+
+- onTap is an empty lambda — no navigation, no dialog, no state change
+- The CTA is purely visual with no side effects
+- Safe for demo/preview purposes
+
+Status: ✅ CTA tap handler is inert (empty onTap). No side effects.
