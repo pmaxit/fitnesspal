@@ -91,7 +91,6 @@ class ProgressRing extends StatelessWidget {
     );
   }
 }
-}
 
 class RingPainter extends CustomPainter {
   final Color trackColor;
@@ -144,31 +143,6 @@ class RingPainter extends CustomPainter {
         glowPaint,
       );
     }
-
-    // Draw fill
-    paint.color = fillColor;
-    paint.shader = SweepGradient(
-      colors: [fillColor.withOpacity(0.5), fillColor],
-    ).createShader(Rect.fromCircle(center: center, radius: radius));
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(RingPainter oldDelegate) =>
-    oldDelegate.percentage != percentage ||
-    oldDelegate.fillColor != fillColor ||
-    oldDelegate.trackColor != trackColor ||
-    oldDelegate.strokeWidth != strokeWidth ||
-    oldDelegate.glowColor != glowColor ||
-    oldDelegate.glowRadius != glowRadius;
-}
 
     // Draw fill
     paint.color = fillColor;

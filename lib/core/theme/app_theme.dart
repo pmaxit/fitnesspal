@@ -20,7 +20,7 @@ class AppTheme {
       elevation: 0,
       centerTitle: false,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: AppColors.darkBgCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -29,7 +29,7 @@ class AppTheme {
       ),
     ),
     textTheme: _buildTextTheme(AppColors.darkFg1, AppColors.darkFg2, AppColors.darkFg3),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: AppColors.accent,
       unselectedLabelColor: AppColors.darkFg3,
       indicator: UnderlineTabIndicator(
@@ -49,7 +49,7 @@ class AppTheme {
       elevation: 0,
       centerTitle: false,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: AppColors.lightBgCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -58,7 +58,7 @@ class AppTheme {
       ),
     ),
     textTheme: _buildTextTheme(AppColors.lightFg1, AppColors.lightFg2, AppColors.lightFg3),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: AppColors.accent,
       unselectedLabelColor: AppColors.lightFg3,
       indicator: UnderlineTabIndicator(
