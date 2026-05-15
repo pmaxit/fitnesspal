@@ -85,12 +85,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Expanded(
       child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
         onTap: () => setState(() => _selectedTab = index),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.accentSoft2 : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(
                 icon,
                 color: isActive ? activeColor : inactiveColor,

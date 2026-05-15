@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/presentation/screens/dashboard_screen.dart';
 import 'package:fitnesspal/presentation/screens/home_screen.dart';
 
@@ -57,6 +58,93 @@ void main() {
       expect(find.text('Meals'), findsOneWidget);
       expect(find.text('Habits'), findsOneWidget);
       expect(find.text('Profile'), findsOneWidget);
+    });
+
+    testWidgets(
+        'tapping empty area inside Activity tab cell switches to Activity tab',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeScreen(
+            isDarkMode: true,
+            onThemeToggle: () {},
+            isCompactDensity: false,
+            onDensityToggle: () {},
+          ),
+        ),
+      );
+
+      // Verify we start on Home tab (DashboardScreen shows 'Hi Maya')
+      expect(find.text('Hi Maya'), findsOneWidget);
+
+      // Get positions of Activity text and icon to find empty area between them
+      final textRect = tester.getRect(find.text('Activity'));
+      final iconRect = tester.getRect(find.byIcon(Icons.show_chart));
+
+      // Tap in the empty area between icon bottom and text top
+      // This is within the GestureDetector but not on the icon or text
+      await tester.tapAt(Offset(
+        textRect.center.dx,
+        (textRect.top + iconRect.bottom) / 2,
+      ));
+      await tester.pumpAndSettle();
+
+      // Verify Activity screen content appears
+      expect(find.text('ACTIVITY'), findsOneWidget);
+      expect(find.text('Activity Log'), findsOneWidget);
+    });
+
+    testWidgets('selected tab has visible icon background cue',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeScreen(
+            isDarkMode: true,
+            onThemeToggle: () {},
+            isCompactDensity: false,
+            onDensityToggle: () {},
+          ),
+        ),
+      );
+
+      // Home tab (index 0) is selected by default
+      await tester.pump();
+
+      // Find the Container with accentSoft2 decoration color
+      // Only the active tab's icon Container should have this
+      final activeCue = find.byWidgetPredicate(
+        (widget) => widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).color == AppColors.accentSoft2,
+      );
+      expect(activeCue, findsOneWidget);
+    });
+
+    testWidgets('unselected tabs do not show selected background cue',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: HomeScreen(
+            isDarkMode: true,
+            onThemeToggle: () {},
+            isCompactDensity: false,
+            onDensityToggle: () {},
+          ),
+        ),
+      );
+
+      // Tap Activity tab to switch selection away from Home
+      await tester.tap(find.text('Activity'));
+      await tester.pumpAndSettle();
+
+      // Only one Container should have accentSoft2 (the Activity tab's icon)
+      // This proves unselected tabs (Home, Meals, Habits, Profile) do NOT have it
+      final activeCues = find.byWidgetPredicate(
+        (widget) => widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration as BoxDecoration).color == AppColors.accentSoft2,
+      );
+      expect(activeCues, findsOneWidget);
     });
   });
 }
