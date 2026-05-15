@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "370106486674",
+    "project_id": "fitnesspal-149a7",
+    "storage_bucket": "fitnesspal-149a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:370106486674:android:5fe12f2da12e252c497b4b",
+        "android_client_info": {
+          "package_name": "com.example.fitnesspal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA761ppRkiHyKt1aBpoK3ZAxhgB3u-vRvI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
