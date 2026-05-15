@@ -95,7 +95,8 @@ class FirestoreService {
   Stream<UserProfile?> streamUserProfile() {
     return _profileRef.snapshots().map((snap) {
       if (!snap.exists || snap.data() == null) return null;
-      return UserProfile.fromJson(snap.data()!);
+      final data = snap.data()!;
+      return UserProfile.fromJson(<String, dynamic>{...data, 'id': snap.id});
     });
   }
 
@@ -104,7 +105,8 @@ class FirestoreService {
     try {
       final snap = await _profileRef.get();
       if (!snap.exists || snap.data() == null) return null;
-      return UserProfile.fromJson(snap.data()!);
+      final data = snap.data()!;
+      return UserProfile.fromJson(<String, dynamic>{...data, 'id': snap.id});
     } on FirebaseException {
       return null;
     }
@@ -142,7 +144,7 @@ class FirestoreService {
   /// Real-time stream of all meals ordered by timestamp descending.
   Stream<List<Meal>> streamMeals() {
     return _mealsCollection
-        .orderBy('timestamp', descending: true)
+        .orderBy('createdAt', descending: true)
         .snapshots()
         .map(_snapshotToList<Meal>(Meal.fromJson));
   }
@@ -172,7 +174,7 @@ class FirestoreService {
   /// Real-time stream of all activities ordered by timestamp descending.
   Stream<List<Activity>> streamActivities() {
     return _activitiesCollection
-        .orderBy('timestamp', descending: true)
+        .orderBy('date', descending: true)
         .snapshots()
         .map(_snapshotToList<Activity>(Activity.fromJson));
   }
@@ -209,7 +211,23 @@ class FirestoreService {
         if (!snap.exists || snap.data() == null) return;
 
         final habit = Habit.fromJson(snap.data()!);
-        final updated = habit.copyWith(isCompleted: !habit.isCompleted);
+        final isCompleting = !habit.isCompleted;
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        
+        List<DateTime> completedDates = List.from(habit.completedDates);
+        if (isCompleting) {
+          if (!completedDates.any((d) => d.year == today.year && d.month == today.month && d.day == today.day)) {
+            completedDates.add(today);
+          }
+        } else {
+          completedDates.removeWhere((d) => d.year == today.year && d.month == today.month && d.day == today.day);
+        }
+
+        final updated = habit.copyWith(
+          isCompleted: isCompleting,
+          completedDates: completedDates,
+        );
         transaction.set(ref, updated.toJson());
       });
     } on FirebaseException {
@@ -247,7 +265,8 @@ class FirestoreService {
           .limit(1)
           .get();
       if (snap.docs.isEmpty) return null;
-      return DailyMetric.fromJson(snap.docs.first.data());
+      final doc = snap.docs.first;
+      return DailyMetric.fromJson(<String, dynamic>{...doc.data(), 'id': doc.id});
     } on FirebaseException {
       return null;
     }
@@ -269,9 +288,9 @@ class FirestoreService {
   /// a `List<T>` using the supplied [fromJson] factory.
   static List<T> Function(QuerySnapshot<Map<String, dynamic>>)
       _snapshotToList<T>(T Function(Map<String, dynamic>) fromJson) {
-    return (snapshot) => snapshot.docs
-        .where((doc) => doc.data().isNotEmpty)
-        .map((doc) => fromJson(doc.data()))
-        .toList();
+    return (snapshot) => snapshot.docs.map((doc) {
+          final data = doc.data();
+          return fromJson(<String, dynamic>{...data, 'id': doc.id});
+        }).toList();
   }
 }

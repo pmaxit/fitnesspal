@@ -9,6 +9,14 @@ class DailyMetric {
   final int waterCups;
   final double wellnessScore;
   final String? aiInsight;
+  final int sleepScore;
+  final int trainScore;
+  final int foodScore;
+  final int hydrationScore;
+  final int recoveryPct;
+  final double energyScore;
+  final int calorieTarget;
+  final int waterTarget;
 
   const DailyMetric({
     required this.id,
@@ -19,6 +27,14 @@ class DailyMetric {
     required this.waterCups,
     required this.wellnessScore,
     this.aiInsight,
+    this.sleepScore = 0,
+    this.trainScore = 0,
+    this.foodScore = 0,
+    this.hydrationScore = 0,
+    this.recoveryPct = 0,
+    this.energyScore = 0,
+    this.calorieTarget = 2000,
+    this.waterTarget = 8,
   });
 
   factory DailyMetric.fromFirestore(DocumentSnapshot doc) {
@@ -32,6 +48,14 @@ class DailyMetric {
       waterCups: data['waterCups'] as int,
       wellnessScore: (data['wellnessScore'] as num).toDouble(),
       aiInsight: data['aiInsight'] as String?,
+      sleepScore: data['sleepScore'] as int? ?? 0,
+      trainScore: data['trainScore'] as int? ?? 0,
+      foodScore: data['foodScore'] as int? ?? 0,
+      hydrationScore: data['hydrationScore'] as int? ?? 0,
+      recoveryPct: data['recoveryPct'] as int? ?? 0,
+      energyScore: (data['energyScore'] as num?)?.toDouble() ?? 0,
+      calorieTarget: data['calorieTarget'] as int? ?? 2000,
+      waterTarget: data['waterTarget'] as int? ?? 8,
     );
   }
 
@@ -45,6 +69,14 @@ class DailyMetric {
       waterCups: data['waterCups'] as int,
       wellnessScore: (data['wellnessScore'] as num).toDouble(),
       aiInsight: data['aiInsight'] as String?,
+      sleepScore: data['sleepScore'] as int? ?? 0,
+      trainScore: data['trainScore'] as int? ?? 0,
+      foodScore: data['foodScore'] as int? ?? 0,
+      hydrationScore: data['hydrationScore'] as int? ?? 0,
+      recoveryPct: data['recoveryPct'] as int? ?? 0,
+      energyScore: (data['energyScore'] as num?)?.toDouble() ?? 0,
+      calorieTarget: data['calorieTarget'] as int? ?? 2000,
+      waterTarget: data['waterTarget'] as int? ?? 8,
     );
   }
 
@@ -57,6 +89,14 @@ class DailyMetric {
       'waterCups': waterCups,
       'wellnessScore': wellnessScore,
       'aiInsight': aiInsight,
+      'sleepScore': sleepScore,
+      'trainScore': trainScore,
+      'foodScore': foodScore,
+      'hydrationScore': hydrationScore,
+      'recoveryPct': recoveryPct,
+      'energyScore': energyScore,
+      'calorieTarget': calorieTarget,
+      'waterTarget': waterTarget,
     };
   }
 
@@ -71,6 +111,14 @@ class DailyMetric {
     int? waterCups,
     double? wellnessScore,
     String? aiInsight,
+    int? sleepScore,
+    int? trainScore,
+    int? foodScore,
+    int? hydrationScore,
+    int? recoveryPct,
+    double? energyScore,
+    int? calorieTarget,
+    int? waterTarget,
   }) {
     return DailyMetric(
       id: id ?? this.id,
@@ -81,6 +129,14 @@ class DailyMetric {
       waterCups: waterCups ?? this.waterCups,
       wellnessScore: wellnessScore ?? this.wellnessScore,
       aiInsight: aiInsight ?? this.aiInsight,
+      sleepScore: sleepScore ?? this.sleepScore,
+      trainScore: trainScore ?? this.trainScore,
+      foodScore: foodScore ?? this.foodScore,
+      hydrationScore: hydrationScore ?? this.hydrationScore,
+      recoveryPct: recoveryPct ?? this.recoveryPct,
+      energyScore: energyScore ?? this.energyScore,
+      calorieTarget: calorieTarget ?? this.calorieTarget,
+      waterTarget: waterTarget ?? this.waterTarget,
     );
   }
 }

@@ -1,18 +1,19 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import 'package:fitnesspal/core/models/daily_metric.dart';
+import 'package:fitnesspal/core/models/habit.dart';
 import 'package:fitnesspal/core/models/user_profile.dart';
 import 'package:fitnesspal/core/services/firestore_service.dart';
-import 'package:fitnesspal/core/theme/app_theme.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/presentation/widgets/progress_ring.dart';
 
-// ── File-private color constants ──
-const _emeraldGradientStart = Color(0xFF22C58B);
-const _emeraldGradientEnd = Color(0xFF10B981);
-const _glowColor = Color(0x3310B981);
-const _scoreRingTrackColor = Color(0x33FFFFFF);
+const _waterRingColor = Color(0xFF06B6D4);
+
+enum TrajectoryPeriod { today, fourWeek, twelveWeek }
 
 class DashboardScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -27,8 +28,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final FirestoreService _firestore = FirestoreService();
   DailyMetric? _metric;
   UserProfile? _profile;
+  List<Habit> _habits = [];
+  
   StreamSubscription<DailyMetric?>? _metricSub;
   StreamSubscription<UserProfile?>? _profileSub;
+  StreamSubscription<List<Habit>>? _habitsSub;
+
+  TrajectoryPeriod _selectedPeriod = TrajectoryPeriod.today;
 
   @override
   void initState() {
@@ -39,52 +45,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _profileSub = _firestore.streamUserProfile().listen((p) {
       if (mounted) setState(() => _profile = p);
     });
+    _habitsSub = _firestore.streamHabits().listen((h) {
+      if (mounted) setState(() => _habits = h);
+    });
   }
 
   @override
   void dispose() {
     _metricSub?.cancel();
     _profileSub?.cancel();
+    _habitsSub?.cancel();
     super.dispose();
   }
-
-  // ── Derived data (nullable — null when data not yet loaded) ──
-
-  String? get _greeting => _profile?.name;
-
-  int? get _wellnessScore => _metric?.wellnessScore.round();
-
-  String? get _aiInsight => _metric?.aiInsight;
-
-  String? get _caloriesValue =>
-      _metric != null ? _formatNumber(_metric!.calories) : null;
-
-  double? get _caloriesProgress =>
-      _metric != null ? _metric!.calories / 2500 : null;
-
-  String? get _sleepValue =>
-      _metric != null ? _metric!.sleepHours.toStringAsFixed(1) : null;
-
-  double? get _sleepProgress =>
-      _metric != null ? _metric!.sleepHours / 10 : null;
-
-  String? get _stepsValue =>
-      _metric != null ? _formatNumber(_metric!.steps) : null;
-
-  double? get _stepsProgress =>
-      _metric != null ? _metric!.steps / 10000 : null;
-
-  String? get _waterValue =>
-      _metric != null ? _metric!.waterCups.toString() : null;
-
-  double? get _waterProgress =>
-      _metric != null ? _metric!.waterCups / 10 : null;
-
-  // Trend strings use static fallbacks (no historical comparison in models yet).
-  String get _caloriesTrend => '↑ +3%';
-  String get _sleepTrend => '↑ +12%';
-  String get _stepsTrend => '↓ -2%';
-  String get _waterTrend => '→ 0%';
 
   static String _formatNumber(int n) {
     final s = n.toString();
@@ -100,321 +72,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDarkMode;
+    final now = DateTime.now();
+    final dateStr = DateFormat('EEEE · MMMM d').format(now);
+    final yearStr = DateFormat('yyyy').format(now);
+
+    final profile = _profile;
+    final metric = _metric;
+
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBgApp : AppColors.lightBgApp,
       body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header Area ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    // Top row: greeting (if loaded) + notification bell
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_greeting != null)
-                          Text(
-                            _greeting!,
-                            style: Theme.of(context).textTheme.displayMedium,
-                          )
-                        else
-                          const SizedBox.shrink(),
-                        GestureDetector(
-                          onTap: () {},
-                          child: Stack(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Icon(
-                                  Icons.notifications_outlined,
-                                  color:
-                                      isDark ? AppColors.darkFg1 : AppColors.lightFg1,
-                                  size: 26,
-                                ),
-                              ),
-                              Positioned(
-                                right: 2,
-                                top: 2,
-                                child: Container(
-                                  width: 9,
-                                  height: 9,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.accent,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // AI Coach chip
-                    GestureDetector(
-                      onTap: () {},
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(
-                            color: AppColors.accent.withValues(alpha: 0.35),
-                          ),
-                          color: AppColors.accentSoft,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accentGlow,
-                              blurRadius: 14,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.auto_awesome,
-                              color: AppColors.accent,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              'AI Coach',
-                              style: TextStyle(
-                                color: AppColors.accent,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              _DashboardHeader(
+                name: profile?.name ?? '...',
+                dateSubtitle: '$dateStr · steady week so far',
+                isDarkMode: isDark,
               ),
-
               const SizedBox(height: 24),
-
-              // ── Loading state ──
-              if (_metric == null)
+              if (metric == null || profile == null)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 80),
                   child: Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.accent,
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.accent),
                   ),
                 )
               else ...[
-                // ── Hero Card Area ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _HeroWellnessCard(
-                    isDarkMode: isDark,
-                    wellnessScore: _wellnessScore!,
-                    aiInsight: _aiInsight,
-                  ),
+                _TrajectoryCard(
+                  isDarkMode: isDark,
+                  profile: profile,
+                  metric: metric,
+                  selectedPeriod: _selectedPeriod,
+                  onPeriodChanged: (p) => setState(() => _selectedPeriod = p),
+                  dateStr: '${DateFormat('MMM d').format(now)}, $yearStr',
                 ),
-
                 const SizedBox(height: 24),
-
-                // ── Metric Grid Area ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Row 1: Calories, Sleep
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Calories',
-                            value: _caloriesValue!,
-                            unit: 'kcal',
-                            progress: _caloriesProgress!,
-                            trend: _caloriesTrend,
-                            isDarkMode: isDark,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Sleep',
-                            value: _sleepValue!,
-                            unit: 'hrs',
-                            progress: _sleepProgress!,
-                            trend: _sleepTrend,
-                            isDarkMode: isDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Row 2: Steps, Water
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Steps',
-                            value: _stepsValue!,
-                            unit: 'steps',
-                            progress: _stepsProgress!,
-                            trend: _stepsTrend,
-                            isDarkMode: isDark,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _MetricCard(
-                            label: 'Water',
-                            value: _waterValue!,
-                            unit: 'cups',
-                            progress: _waterProgress!,
-                            trend: _waterTrend,
-                            isDarkMode: isDark,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                _TodayRingsSection(
+                  isDarkMode: isDark,
+                  metric: metric,
+                  habits: _habits,
+                  formatNumber: _formatNumber,
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ── CTA Area ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // AI Insight (only if available)
-                    if (_aiInsight != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentSoft,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  size: 12,
-                                  color: _emeraldGradientEnd,
-                                ),
-                                const SizedBox(width: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color:
-                                          _emeraldGradientEnd.withValues(alpha: 0.5),
-                                    ),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    'AI Coach',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: _emeraldGradientEnd,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _aiInsight!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color:
-                                    isDark ? AppColors.darkFg1 : AppColors.lightFg1,
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-
-                    // Today's Plan CTA
-                    GestureDetector(
-                      onTap: () {},
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [_emeraldGradientStart, _emeraldGradientEnd],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _emeraldGradientEnd.withValues(alpha: 0.3),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "Today's Plan",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.arrow_forward,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Personalized suggestion
-                    Text(
-                      'Start with a 20-min morning recovery flow \u2192',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        color: isDark ? AppColors.darkFg2 : AppColors.lightFg2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               ],
-
               const SizedBox(height: 32),
             ],
           ),
@@ -423,7 +125,712 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
-// ── Body Silhouette Painter (minimalist vector outline) ──
+
+class _DashboardHeader extends StatelessWidget {
+  final String name;
+  final String dateSubtitle;
+  final bool isDarkMode;
+
+  const _DashboardHeader({
+    required this.name,
+    required this.dateSubtitle,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg1 = isDarkMode ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg2 = isDarkMode ? AppColors.darkFg2 : AppColors.lightFg2;
+    final fg3 = isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'GOOD MORNING',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: fg3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Hi, $name',
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: fg1,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                dateSubtitle,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: fg2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Row(
+          children: [
+            _HeaderAction(icon: LucideIcons.sparkles, isDarkMode: isDarkMode),
+            const SizedBox(width: 12),
+            _HeaderAction(
+              icon: LucideIcons.bell,
+              isDarkMode: isDarkMode,
+              showDot: true,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _HeaderAction extends StatelessWidget {
+  final IconData icon;
+  final bool isDarkMode;
+  final bool showDot;
+
+  const _HeaderAction({
+    required this.icon,
+    required this.isDarkMode,
+    this.showDot = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final border = isDarkMode ? AppColors.darkBorder : AppColors.lightBorder;
+    final card = isDarkMode ? AppColors.darkBgCard : AppColors.lightBgCard;
+    final fg1 = isDarkMode ? AppColors.darkFg1 : AppColors.lightFg1;
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border.withOpacity(0.5)),
+      ),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(icon, color: showDot ? fg1 : AppColors.accent, size: 22),
+          if (showDot)
+            Positioned(
+              right: 12,
+              top: 12,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrajectoryCard extends StatelessWidget {
+  final bool isDarkMode;
+  final UserProfile profile;
+  final DailyMetric metric;
+  final TrajectoryPeriod selectedPeriod;
+  final ValueChanged<TrajectoryPeriod> onPeriodChanged;
+  final String dateStr;
+
+  const _TrajectoryCard({
+    required this.isDarkMode,
+    required this.profile,
+    required this.metric,
+    required this.selectedPeriod,
+    required this.onPeriodChanged,
+    required this.dateStr,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg1 = isDarkMode ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg2 = isDarkMode ? AppColors.darkFg2 : AppColors.lightFg2;
+    final fg3 = isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3;
+    final border = isDarkMode ? AppColors.darkBorder : AppColors.lightBorder;
+    final card = isDarkMode ? AppColors.darkBgCard : AppColors.lightBgCard;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Stack(
+        children: [
+          // Radial glow at top
+          Positioned(
+            top: -100,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.accent.withOpacity(0.08),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'YOUR TRAJECTORY',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: fg3,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.sparkles, size: 10, color: AppColors.accent),
+                        SizedBox(width: 4),
+                        Text(
+                          'AI',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Where you are today',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: fg1,
+                ),
+              ),
+              Text(
+                dateStr,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: fg3,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 240,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: CustomPaint(
+                        size: const Size(140, 220),
+                        painter: _BodySilhouettePainter(
+                          color: fg2.withOpacity(0.18),
+                        ),
+                      ),
+                    ),
+                    // Glow dots
+                    _GlowDot(left: 0.32 * 140 + (math.max(0, (MediaQuery.of(context).size.width - 40 - 140) / 2)), top: 0.22 * 220 + 10),
+                    _GlowDot(left: 0.64 * 140 + (math.max(0, (MediaQuery.of(context).size.width - 40 - 140) / 2)), top: 0.30 * 220 + 10),
+                    _GlowDot(left: 0.60 * 140 + (math.max(0, (MediaQuery.of(context).size.width - 40 - 140) / 2)), top: 0.70 * 220 + 10),
+                    _GlowDot(left: 0.38 * 140 + (math.max(0, (MediaQuery.of(context).size.width - 40 - 140) / 2)), top: 0.56 * 220 + 10),
+                    
+                    // Stat Labels
+                    Positioned(
+                      left: 0,
+                      top: 40,
+                      child: _BodyStatLabel(
+                        label: 'MUSCLE',
+                        value: '${profile.muscleLb.round()}',
+                        unit: 'lb',
+                        isDarkMode: isDarkMode,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 10,
+                      child: _BodyStatLabel(
+                        label: 'RECOVERY',
+                        value: '${metric.recoveryPct}',
+                        unit: '%',
+                        isDarkMode: isDarkMode,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      bottom: 40,
+                      child: _BodyStatLabel(
+                        label: 'BODY FAT',
+                        value: '${profile.bodyFatPct.round()}',
+                        unit: '%',
+                        isDarkMode: isDarkMode,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 80,
+                      child: _BodyStatLabel(
+                        label: 'WEIGHT',
+                        value: '${profile.weightLb.round()}',
+                        unit: 'lb',
+                        isDarkMode: isDarkMode,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              _PeriodPillSelector(
+                selected: selectedPeriod,
+                onChanged: onPeriodChanged,
+                isDarkMode: isDarkMode,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Stay consistent to reach your goals — your body adapts daily.',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: fg2,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlowDot extends StatelessWidget {
+  final double left;
+  final double top;
+
+  const _GlowDot({required this.left, required this.top});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: left - 7,
+      top: top - 7,
+      child: Container(
+        width: 14,
+        height: 14,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              AppColors.accent.withOpacity(0.7),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BodyStatLabel extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final bool isDarkMode;
+  final CrossAxisAlignment crossAxisAlignment;
+
+  const _BodyStatLabel({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.isDarkMode,
+    this.crossAxisAlignment = CrossAxisAlignment.start,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg1 = isDarkMode ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg3 = isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3;
+
+    return Column(
+      crossAxisAlignment: crossAxisAlignment,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+            color: fg3,
+          ),
+        ),
+        const SizedBox(height: 2),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: fg1,
+                ),
+              ),
+              TextSpan(
+                text: unit,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PeriodPillSelector extends StatelessWidget {
+  final TrajectoryPeriod selected;
+  final ValueChanged<TrajectoryPeriod> onChanged;
+  final bool isDarkMode;
+
+  const _PeriodPillSelector({
+    required this.selected,
+    required this.onChanged,
+    required this.isDarkMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isDarkMode ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6);
+
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        children: [
+          _PillItem(
+            label: 'Today',
+            isActive: selected == TrajectoryPeriod.today,
+            onTap: () => onChanged(TrajectoryPeriod.today),
+          ),
+          _PillItem(
+            label: '+4 wk',
+            isActive: selected == TrajectoryPeriod.fourWeek,
+            onTap: () => onChanged(TrajectoryPeriod.fourWeek),
+          ),
+          _PillItem(
+            label: '+12 wk',
+            isActive: selected == TrajectoryPeriod.twelveWeek,
+            onTap: () => onChanged(TrajectoryPeriod.twelveWeek),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PillItem extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _PillItem({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.accent : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+              color: isActive ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkFg2 : AppColors.lightFg2),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayRingsSection extends StatelessWidget {
+  final bool isDarkMode;
+  final DailyMetric metric;
+  final List<Habit> habits;
+  final String Function(int) formatNumber;
+
+  const _TodayRingsSection({
+    required this.isDarkMode,
+    required this.metric,
+    required this.habits,
+    required this.formatNumber,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg3 = isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3;
+    final habitsCompleted = habits.where((h) => h.isCompleted).length;
+    final habitsTotal = habits.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'TODAY\'S RINGS',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.2,
+                color: fg3,
+              ),
+            ),
+            GestureDetector(
+              onTap: () {},
+              child: const Row(
+                children: [
+                  Text(
+                    'View all',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.accent,
+                    ),
+                  ),
+                  Icon(LucideIcons.chevronRight, size: 16, color: AppColors.accent),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _RingCard(
+                label: 'CALORIES',
+                value: formatNumber(metric.calories),
+                sub: 'of ${formatNumber(metric.calorieTarget)} kcal',
+                progress: metric.calories / metric.calorieTarget * 100,
+                isDarkMode: isDarkMode,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _RingCard(
+                label: 'WATER',
+                value: '${metric.waterCups}/${metric.waterTarget}',
+                unit: ' glasses',
+                sub: '${math.max(0, metric.waterTarget - metric.waterCups)} to go',
+                progress: metric.waterCups / metric.waterTarget * 100,
+                ringColor: _waterRingColor,
+                isDarkMode: isDarkMode,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _RingCard(
+                label: 'HABITS',
+                value: '$habitsCompleted/$habitsTotal',
+                sub: habitsCompleted == habitsTotal ? '' : '${habitsTotal - habitsCompleted} to go',
+                progress: habitsTotal > 0 ? (habitsCompleted / habitsTotal * 100) : 0,
+                isDarkMode: isDarkMode,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _RingCard(
+                label: 'ENERGY',
+                value: metric.energyScore.toStringAsFixed(1),
+                unit: '/10',
+                progress: metric.energyScore * 10,
+                isDarkMode: isDarkMode,
+                centerWidget: const Icon(
+                  LucideIcons.smile,
+                  size: 24,
+                  color: AppColors.accent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _RingCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  final String sub;
+  final double progress;
+  final Color ringColor;
+  final bool isDarkMode;
+  final Widget? centerWidget;
+
+  const _RingCard({
+    required this.label,
+    required this.value,
+    this.unit = '',
+    this.sub = '',
+    required this.progress,
+    this.ringColor = AppColors.accent,
+    required this.isDarkMode,
+    this.centerWidget,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg1 = isDarkMode ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg3 = isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3;
+    final border = isDarkMode ? AppColors.darkBorder : AppColors.lightBorder;
+    final card = isDarkMode ? AppColors.darkBgCard : AppColors.lightBgCard;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        children: [
+          ProgressRing(
+            size: 56,
+            strokeWidth: 6,
+            percentage: progress,
+            label: '',
+            value: '',
+            unit: '',
+            showLabel: false,
+            fillColor: ringColor,
+            trackColor: isDarkMode ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.1),
+            centerWidget: centerWidget ?? const SizedBox.shrink(),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: fg3,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: value,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: fg1,
+                        ),
+                      ),
+                      if (unit.isNotEmpty)
+                        TextSpan(
+                          text: unit,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: fg3,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (sub.isNotEmpty)
+                  Text(
+                    sub,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: fg3,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BodySilhouettePainter extends CustomPainter {
   final Color color;
 
@@ -438,11 +845,11 @@ class _BodySilhouettePainter extends CustomPainter {
     final cx = size.width / 2;
     final h = size.height;
 
-    // Head — smooth circle
+    // Head
     final headR = h * 0.075;
     canvas.drawCircle(Offset(cx, h * 0.09), headR, paint);
 
-    // Torso — organic curves from shoulders to hips
+    // Torso
     final torso = Path()
       ..moveTo(cx, h * 0.17)
       ..cubicTo(cx - h * 0.14, h * 0.195, cx - h * 0.18, h * 0.28,
@@ -458,7 +865,7 @@ class _BodySilhouettePainter extends CustomPainter {
       ..close();
     canvas.drawPath(torso, paint);
 
-    // Left arm — tapered curve from shoulder
+    // Left arm
     final leftArm = Path()
       ..moveTo(cx - h * 0.13, h * 0.21)
       ..cubicTo(cx - h * 0.22, h * 0.27, cx - h * 0.26, h * 0.37,
@@ -470,7 +877,7 @@ class _BodySilhouettePainter extends CustomPainter {
       ..close();
     canvas.drawPath(leftArm, paint);
 
-    // Right arm — mirrored
+    // Right arm
     final rightArm = Path()
       ..moveTo(cx + h * 0.13, h * 0.21)
       ..cubicTo(cx + h * 0.22, h * 0.27, cx + h * 0.26, h * 0.37,
@@ -482,7 +889,7 @@ class _BodySilhouettePainter extends CustomPainter {
       ..close();
     canvas.drawPath(rightArm, paint);
 
-    // Left leg — tapered from hip
+    // Left leg
     final leftLeg = Path()
       ..moveTo(cx - h * 0.07, h * 0.59)
       ..cubicTo(cx - h * 0.09, h * 0.72, cx - h * 0.10, h * 0.87,
@@ -493,7 +900,7 @@ class _BodySilhouettePainter extends CustomPainter {
       ..close();
     canvas.drawPath(leftLeg, paint);
 
-    // Right leg — mirrored
+    // Right leg
     final rightLeg = Path()
       ..moveTo(cx + h * 0.07, h * 0.59)
       ..cubicTo(cx + h * 0.09, h * 0.72, cx + h * 0.10, h * 0.87,
@@ -508,368 +915,4 @@ class _BodySilhouettePainter extends CustomPainter {
   @override
   bool shouldRepaint(_BodySilhouettePainter oldDelegate) =>
       oldDelegate.color != color;
-}
-
-// ── Hero Wellness Card ──
-class _HeroWellnessCard extends StatelessWidget {
-  final bool isDarkMode;
-  final int wellnessScore;
-  final String? aiInsight;
-
-  const _HeroWellnessCard({
-    required this.isDarkMode,
-    required this.wellnessScore,
-    this.aiInsight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final isDark = isDarkMode;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBgCard : AppColors.lightBgCard,
-        borderRadius: BorderRadius.circular(AppTheme.radius3xl),
-        border: Border.all(
-          color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark ? AppColors.darkShadowMd : AppColors.lightShadowMd,
-            blurRadius: 24,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radius3xl),
-        child: Stack(
-          children: [
-            // Subtle gradient overlay at top
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.topCenter,
-                      radius: 1.2,
-                      colors: [
-                        Color.fromARGB(18, 16, 185, 129),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Card content
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top row: score ring + silhouette
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Wellness score ring
-                      _WellnessScoreRing(
-                        isDarkMode: isDark,
-                        score: wellnessScore,
-                      ),
-                      const Spacer(),
-                      // Body silhouette with metrics overlaid
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: 76,
-                            height: 114,
-                            child: CustomPaint(
-                              painter: _BodySilhouettePainter(
-                                color: isDark
-                                    ? Colors.white.withOpacity(0.20)
-                                    : AppColors.darkFg2.withOpacity(0.20),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // Body metrics — 2x2 grid
-                  Row(
-                    children: [
-                      _bodyMetric(
-                        textTheme,
-                        '68',
-                        'kg',
-                        'Weight',
-                        isDark,
-                      ),
-                      const Spacer(),
-                      _bodyMetric(
-                        textTheme,
-                        '21',
-                        '%',
-                        'Body fat',
-                        isDark,
-                      ),
-                      const Spacer(),
-                      _bodyMetric(
-                        textTheme,
-                        '7.5',
-                        'hrs',
-                        'Sleep',
-                        isDark,
-                      ),
-                      const Spacer(),
-                      _bodyMetric(
-                        textTheme,
-                        '82',
-                        '%',
-                        'Recovery',
-                        isDark,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  // Divider
-                  Container(
-                    height: 1,
-                    color:
-                        isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                  ),
-                  const SizedBox(height: 12),
-                  // AI insight row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // AI chip
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: AppColors.accent.withOpacity(0.25),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.auto_awesome,
-                              size: 10,
-                              color: AppColors.accent,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'AI Coach',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.accent,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Insight text
-                      Expanded(
-                        child: Text(
-                          aiInsight ?? '',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1.4,
-                            fontWeight: FontWeight.w400,
-                            color:
-                                isDark ? AppColors.darkFg2 : AppColors.lightFg2,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _bodyMetric(
-    TextTheme textTheme,
-    String value,
-    String unit,
-    String label,
-    bool isDark,
-  ) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: value,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? AppColors.darkFg1 : AppColors.lightFg1,
-                  height: 1.1,
-                ),
-              ),
-              TextSpan(
-                text: ' $unit',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.accent,
-                  height: 1.1,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w400,
-            color: isDark ? AppColors.darkFg3 : AppColors.lightFg3,
-            height: 1.1,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Wellness Score Ring Widget ──
-class _WellnessScoreRing extends StatelessWidget {
-  final bool isDarkMode;
-  final int score;
-
-  const _WellnessScoreRing({
-    required this.isDarkMode,
-    required this.score,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ProgressRing(
-      size: 140,
-      strokeWidth: 10,
-      glowColor: _glowColor,
-      trackColor: isDarkMode ? _scoreRingTrackColor : AppColors.lightBorder,
-      percentage: score.toDouble(),
-      label: 'Wellness Score',
-      value: score.toString(),
-      unit: '',
-      centerWidget: Text(
-        score.toString(),
-        style: TextStyle(
-          fontSize: 42,
-          fontWeight: FontWeight.w900,
-          color: isDarkMode ? Colors.white : AppColors.darkFg1,
-        ),
-      ),
-    );
-  }
-}
-
-// ── Metric Mini Card Widget ──
-class _MetricCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final String unit;
-  final double progress;
-  final String trend;
-  final bool isDarkMode;
-
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.unit,
-    required this.progress,
-    required this.trend,
-    required this.isDarkMode,
-  });
-
-  Color _trendColor() {
-    if (trend.startsWith('↑')) return Colors.green;
-    if (trend.startsWith('↓')) return Colors.red;
-    return isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkBgCard : AppColors.lightBgCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDarkMode ? AppColors.darkBorder : AppColors.lightBorder,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color:
-                isDarkMode ? AppColors.darkShadowSm : AppColors.lightShadowSm,
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ProgressRing(
-            size: 70,
-            strokeWidth: 6,
-            glowColor: null,
-            trackColor: isDarkMode
-                ? const Color(0x33FFFFFF)
-                : const Color(0x1A000000),
-            fillColor: AppColors.accent,
-            percentage: progress * 100,
-            label: '',
-            value: '',
-            unit: '',
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isDarkMode ? AppColors.darkFg3 : AppColors.lightFg3,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '$value $unit',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: isDarkMode ? AppColors.darkFg1 : AppColors.lightFg1,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            trend,
-            style: TextStyle(fontSize: 11, color: _trendColor()),
-          ),
-        ],
-      ),
-    );
-  }
 }

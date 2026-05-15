@@ -1,3 +1,7 @@
 {
-  "status": "completed"
+  "active_plan": "/home/puneet/Projects/interviews/fitnesspal/.sisyphus/plans/meals-ai-entry.md",
+  "started_at": "2026-05-15T18:45:14.299Z",
+  "session_ids": ["ses_1d3650915ffecZtFLLm0ipRwU7"],
+  "plan_name": "meals-ai-entry",
+  "status": "active"
 }

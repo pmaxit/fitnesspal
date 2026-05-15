@@ -18,11 +18,11 @@ class AppColors {
   // Dark theme
   static const Color darkBgApp = Color(0xFF020617);
   static const Color darkBgApp2 = Color(0xFF0A0F1D);
-  static const Color darkBgCard = Color.fromARGB(140, 30, 41, 59);
+  static const Color darkBgCard = Color(0xFF1E293B);
   static const Color darkBgCardSolid = Color(0xFF131C2E);
   static const Color darkBgElevated = Color(0xFF1A2438);
   static const Color darkBgOverlay = Color.fromARGB(128, 15, 23, 42);
-  static const Color darkBgTab = Color.fromARGB(199, 10, 14, 26);
+  static const Color darkBgTab = Color(0xFF0A0E1A);
   static const Color darkBgPill = Color.fromARGB(15, 255, 255, 255);
 
   static const Color darkFg1 = Color(0xFFF1F5F9);

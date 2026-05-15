@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>FitnessPal — Print</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <style>
+    html, body { height: auto; }
+    body {
+      background: #f0eee9;
+      margin: 0;
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      color: #0f172a;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ─── Cover page ─── */
+    .print-cover {
+      width: 297mm;
+      min-height: 210mm;
+      padding: 18mm 22mm;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      background: #020617;
+      color: #f1f5f9;
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+      overflow: hidden;
+    }
+    .print-cover::before {
+      content: '';
+      position: absolute;
+      top: -30%; right: -10%;
+      width: 60%; height: 80%;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(16,185,129,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cover-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #10b981;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .cover-title {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.02;
+      margin: 0 0 18px 0;
+      max-width: 700px;
+      position: relative;
+    }
+    .cover-sub {
+      font-size: 14px;
+      color: #94a3b8;
+      max-width: 580px;
+      line-height: 1.55;
+      margin: 0 0 32px 0;
+      position: relative;
+    }
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+      flex: 1;
+      align-items: flex-start;
+      position: relative;
+    }
+    .cover-thumb {
+      display: flex; flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .cover-thumb-phone {
+      transform: scale(0.32);
+      transform-origin: top center;
+      width: 402px;
+      height: 280px; /* clip a portion so it reads as a "screen preview" */
+      overflow: hidden;
+      border-radius: 18px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.35);
+    }
+    .cover-thumb-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      text-align: center;
+    }
+    .cover-footer {
+      margin-top: auto;
+      padding-top: 24px;
+      font-size: 11px;
+      color: #475569;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 600;
+      position: relative;
+    }
+
+    /* ─── Per-screen page ─── */
+    .print-page {
+      width: 297mm;
+      min-height: 210mm;
+      padding: 14mm 18mm;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto 1fr;
+      gap: 18px 28px;
+      align-items: center;
+      page-break-after: always;
+      break-after: page;
+      background: #f6f7f9;
+    }
+    .print-page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+    .print-header {
+      grid-column: 1; grid-row: 1 / -1;
+      align-self: center;
+      max-width: 380px;
+    }
+    .print-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #10b981;
+      margin-bottom: 14px;
+    }
+    .print-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      margin: 0 0 14px 0;
+      color: #0f172a;
+    }
+    .print-sub {
+      font-size: 14px;
+      color: #475569;
+      line-height: 1.6;
+      margin: 0;
+      font-weight: 500;
+    }
+    .print-stage {
+      grid-column: 2; grid-row: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    /* Scale the 402×874 phone down to fit ~165mm tall (printable) */
+    .print-stage > div {
+      transform: scale(0.62);
+      transform-origin: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Print rules */
+    @media print {
+      @page { size: A4 landscape; margin: 0; }
+      body { background: #fff; }
+    }
+
+    @media screen {
+      body { padding: 24px 0; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+      .print-cover, .print-page {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+
+  <script type="text/babel" src="icons.jsx"></script>
+  <script type="text/babel" src="chrome.jsx"></script>
+  <script type="text/babel" src="avatar.jsx"></script>
+
+  <script type="text/babel" src="screen-dashboard.jsx"></script>
+  <script type="text/babel" src="screen-activity.jsx"></script>
+  <script type="text/babel" src="screen-meals.jsx"></script>
+  <script type="text/babel" src="screen-habits.jsx"></script>
+  <script type="text/babel" src="screen-profile.jsx"></script>
+
+  <script type="text/babel" src="app-print.jsx"></script>
+</body>
+</html>

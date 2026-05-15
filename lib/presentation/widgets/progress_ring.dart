@@ -12,6 +12,7 @@ class ProgressRing extends StatelessWidget {
   final Color? glowColor;
   final double strokeWidth;
   final Widget? centerWidget;
+  final bool showLabel;
 
   const ProgressRing({
     Key? key,
@@ -25,6 +26,7 @@ class ProgressRing extends StatelessWidget {
     this.glowColor,
     this.strokeWidth = 8,
     this.centerWidget,
+    this.showLabel = true,
   }) : super(key: key);
 
   @override
@@ -34,6 +36,7 @@ class ProgressRing extends StatelessWidget {
     final fill = fillColor ?? AppColors.accent;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
           width: size,
@@ -81,12 +84,14 @@ class ProgressRing extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 8),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall,
-          textAlign: TextAlign.center,
-        ),
+        if (showLabel) ...[
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }

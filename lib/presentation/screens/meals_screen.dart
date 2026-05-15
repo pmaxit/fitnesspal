@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/core/services/firestore_service.dart';
 import 'package:fitnesspal/core/models/meal.dart';
 import 'package:fitnesspal/core/models/daily_metric.dart';
+import 'package:fitnesspal/presentation/widgets/progress_ring.dart';
 
 class MealsScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -54,537 +56,501 @@ class _MealsScreenState extends State<MealsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDarkMode;
-    final bgCard = isDark ? AppColors.darkBgCard : AppColors.lightBgCard;
+    final bgCard = isDark ? const Color(0xFF161920) : AppColors.lightBgCard;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
     final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
 
-    // Macro totals from actual meals
-    const proteinTarget = 150;
-    const carbsTarget = 300;
-    const fatTarget = 80;
+    // Based on the screenshot
+    const proteinTarget = 130;
+    const carbsTarget = 240;
+    const fatTarget = 70;
+    const calorieTarget = 2100;
 
     final totalProtein = _meals.fold<int>(0, (sum, m) => sum + m.proteinGrams);
     final totalCarbs = _meals.fold<int>(0, (sum, m) => sum + m.carbsGrams);
     final totalFat = _meals.fold<int>(0, (sum, m) => sum + m.fatGrams);
+    final totalCalories = _meals.fold<int>(0, (sum, m) => sum + m.calories);
 
-    final proteinPercent = (totalProtein / proteinTarget).clamp(0.0, 1.0);
-    final carbsPercent = (totalCarbs / carbsTarget).clamp(0.0, 1.0);
-    final fatPercent = (totalFat / fatTarget).clamp(0.0, 1.0);
+    final proteinUnder = proteinTarget - totalProtein;
 
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    'NUTRITION',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: fg3,
-                      letterSpacing: 0.1,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'TODAY · ${totalCalories.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} / ${calorieTarget.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} KCAL',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: fg3,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Meals',
+                          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 34,
+                            color: fg1,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${_meals.length} meals logged · ${proteinUnder > 0 ? '${proteinUnder}g protein under' : 'Protein target met'}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: fg3,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Meals',
-                    style: Theme.of(context).textTheme.displayMedium,
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: border),
+                        ),
+                        child: Icon(LucideIcons.filter, color: fg1, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: border),
+                        ),
+                        child: Icon(LucideIcons.sparkles, color: fg1, size: 20),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            ),
+
+            // Top Macro Card
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: bgCard,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: border),
+              ),
+              child: Row(
+                children: [
+                  ProgressRing(
+                    percentage: (totalCalories / calorieTarget * 100).clamp(0.0, 100.0),
+                    size: 96,
+                    label: '',
+                    value: '',
+                    unit: '',
+                    showLabel: false,
+                    strokeWidth: 8,
+                    fillColor: const Color(0xFF10B981), // Emerald
+                    trackColor: border,
+                    centerWidget: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$totalCalories',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: fg1,
+                          ),
+                        ),
+                        Text(
+                          'KCAL',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: fg3,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        _buildMacroBar('PROTEIN', totalProtein, proteinTarget, const Color(0xFF10B981), fg1, fg2, fg3, border),
+                        const SizedBox(height: 14),
+                        _buildMacroBar('CARBS', totalCarbs, carbsTarget, Colors.orange, fg1, fg2, fg3, border),
+                        const SizedBox(height: 14),
+                        _buildMacroBar('FAT', totalFat, fatTarget, const Color(0xFF8B5CF6), fg1, fg2, fg3, border),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
 
-            // Macro ring
-            _macroRing(
-              context,
-              isDark,
-              totalProtein,
-              totalCarbs,
-              totalFat,
-              proteinPercent,
-              carbsPercent,
-              fatPercent,
+            // AI Insight Card
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: bgCard,
+                border: Border.all(color: const Color(0xFF0F3E33)), // Subtle green border
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(LucideIcons.sparkles, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'LOOKING AT YOUR DAY',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF10B981),
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _metric?.aiInsight ?? "You're sitting ${proteinUnder > 0 ? proteinUnder : 0}g protein under and fiber's a little soft. A simple swap at dinner — chicken or tofu over the salad — gets you there.",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: fg1,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            // AI insight — only when data exists
-            if (_metric?.aiInsight != null)
-              Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.accentSoft,
-                  border: Border.all(
-                    color: AppColors.accent.withOpacity(0.3),
-                  ),
-                  borderRadius: BorderRadius.circular(8),
+            // JUST ANALYZED Section
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 32, 20, 16),
+              child: Text(
+                "JUST ANALYZED",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: fg3,
+                  letterSpacing: 1.2,
                 ),
-                child: Row(
+              ),
+            ),
+
+            if (_meals.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: bgCard,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '✨',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _metric!.aiInsight!,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: fg1,
-                          height: 1.5,
+                    // Top image area
+                    Container(
+                      height: 180,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF84CC16), Color(0xFFEAB308), Color(0xFFB45309)],
                         ),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 16,
+                            right: 16,
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.4),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'A-',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    'SCORE',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white70,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 16,
+                            left: 16,
+                            child: Row(
+                              children: [
+                                _buildTag('LUNCH'),
+                                const SizedBox(width: 8),
+                                _buildTag('HIGH FIBER'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Meal Details
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _meals.first.name,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: fg1,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '${_meals.first.description} · ${TimeOfDay.fromDateTime(_meals.first.createdAt).format(context)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: fg3,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildMiniMacroCard('${_meals.first.calories}', 'k', 'KCAL', 0.8, const Color(0xFF10B981), isDark, bgCard, border, fg1, fg3),
+                              _buildMiniMacroCard('${_meals.first.proteinGrams}', 'g', 'PROTEIN', 0.6, const Color(0xFF10B981), isDark, bgCard, border, fg1, fg3),
+                              _buildMiniMacroCard('${_meals.first.carbsGrams}', 'g', 'CARBS', 0.4, Colors.orange, isDark, bgCard, border, fg1, fg3),
+                              _buildMiniMacroCard('${_meals.first.fatGrams}', 'g', 'FAT', 0.3, const Color(0xFF8B5CF6), isDark, bgCard, border, fg1, fg3),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-            // Just analyzed meal — only when meals exist
-            if (_meals.isNotEmpty)
-              _mealHeroCard(context, isDark, _meals.first),
-
-            // Today's meals
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'TODAY\'S MEALS',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: fg3,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ),
-
             if (_isLoading)
-              _buildLoadingSkeleton(bgCard, border)
+              const Center(child: CircularProgressIndicator())
             else if (_meals.isEmpty)
-              _buildEmptyState(bgCard, border, fg2)
-            else
-              Container(
-                margin: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: bgCard,
-                  border: Border.all(color: border),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: List.generate(_meals.length, (i) {
-                    final meal = _meals[i];
-                    return _mealRow(
-                      meal.name,
-                      '${meal.calories} cal',
-                      meal.description,
-                      isDark,
-                      showDivider: i < _meals.length - 1,
-                    );
-                  }),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(LucideIcons.utensils, size: 48, color: fg3.withOpacity(0.4)),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No meals logged today',
+                        style: TextStyle(fontSize: 14, color: fg2, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 100), // Extra space for FAB
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLoadingSkeleton(Color bgCard, Color border) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: bgCard,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: List.generate(
-          3,
-          (index) => Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        width: 140,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 50,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
+  Widget _buildMacroBar(String label, int current, int target, Color color, Color fg1, Color fg2, Color fg3, Color border) {
+    final percent = (current / target).clamp(0.0, 1.0);
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: fg2,
+                letterSpacing: 1.0,
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(Color bgCard, Color border, Color fg2) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      decoration: BoxDecoration(
-        color: bgCard,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Center(
-        child: Text(
-          'No meals logged today',
-          style: TextStyle(fontSize: 13, color: fg2),
-        ),
-      ),
-    );
-  }
-
-  Widget _macroRing(
-    BuildContext context,
-    bool isDark,
-    int totalProtein,
-    int totalCarbs,
-    int totalFat,
-    double proteinPercent,
-    double carbsPercent,
-    double fatPercent,
-  ) {
-    final bgCard = isDark ? AppColors.darkBgCard : AppColors.lightBgCard;
-    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bgCard,
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Macros today',
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: fg3),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _macroItem('Protein', '${totalProtein}g', proteinPercent, Colors.green),
-              _macroItem('Carbs', '${totalCarbs}g', carbsPercent, Colors.orange),
-              _macroItem('Fat', '${totalFat}g', fatPercent, Colors.blue),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _macroBar('Carbs', carbsPercent, Colors.orange),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _macroBar('Protein', proteinPercent, Colors.green),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _macroBar('Fat', fatPercent, Colors.blue),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _macroItem(
-      String label, String value, double percent, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-              fontSize: 16, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.1),
-        ),
-      ],
-    );
-  }
-
-  Widget _macroBar(String label, double percent, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(2),
-          child: LinearProgressIndicator(
-            value: percent,
-            minHeight: 3,
-            backgroundColor: Colors.grey.withOpacity(0.3),
-            valueColor: AlwaysStoppedAnimation(color),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-              fontSize: 9, fontWeight: FontWeight.w700),
-        ),
-      ],
-    );
-  }
-
-  Widget _mealHeroCard(BuildContext context, bool isDark, Meal meal) {
-    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: border),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      clipBehavior: Clip.hardEdge,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 180,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.orange.withOpacity(0.3),
-                  Colors.amber.withOpacity(0.5),
+            RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: fg1),
+                children: [
+                  TextSpan(text: '$current'),
+                  TextSpan(
+                    text: '/${target}g',
+                    style: TextStyle(color: fg3, fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 14,
-                  right: 14,
-                  child: Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.15)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${meal.calories}',
-                          style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white),
-                        ),
-                        const Text(
-                          'CAL',
-                          style: TextStyle(
-                              fontSize: 8,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 14,
-                  left: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.15)),
-                    ),
-                    child: const Text(
-                      'MEAL',
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 6,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: border,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: percent,
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  meal.name,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Just analyzed',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _macroStat('Cal', '${meal.calories}'),
-                    _macroStat('Protein', '${meal.proteinGrams}g'),
-                    _macroStat('Carbs', '${meal.carbsGrams}g'),
-                    _macroStat('Fat', '${meal.fatGrams}g'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTag(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
 
-  Widget _macroStat(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-              fontSize: 14, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.1),
-        ),
-      ],
-    );
-  }
-
-  Widget _mealRow(
-    String meal,
-    String cal,
-    String description,
-    bool isDark, {
-    bool showDivider = true,
-  }) {
-    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
-
-    return Column(
-      children: [
-        Padding(
-          padding:
-              const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-          child: Row(
+  Widget _buildMiniMacroCard(String value, String unit, String label, double percent, Color color, bool isDark, Color bgCard, Color border, Color fg1, Color fg3) {
+    return Container(
+      width: 72,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1D24) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                      colors: [Colors.orange, Colors.amber]),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      meal,
-                      style: const TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: TextStyle(fontSize: 11, color: fg3),
-                    ),
-                  ],
-                ),
-              ),
               Text(
-                cal,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700),
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: fg1,
+                  height: 1.0,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 2),
+                child: Text(
+                  unit,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: fg3,
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-        if (showDivider)
-          Divider(
-              height: 0,
-              thickness: 1,
-              indent: 56,
-              color: border),
-      ],
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              color: fg3,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            height: 4,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: percent,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

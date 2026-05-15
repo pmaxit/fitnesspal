@@ -100,3 +100,4 @@ coverage/
 .claude/
 .sisyphus/evidence/
 
+scripts/serviceAccountKey.json

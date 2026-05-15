@@ -30,10 +30,33 @@ class FakeFirestoreService extends FirestoreService {
   FakeFirestoreService() : super.testConstructor();
 
   @override
-  Stream<UserProfile?> streamUserProfile() => Stream.value(null);
+  Stream<UserProfile?> streamUserProfile() => Stream.value(UserProfile(
+        id: 'maya',
+        name: 'Maya',
+        initials: 'MY',
+        bio: 'Bio',
+        goals: [],
+        weightLb: 178,
+        bodyFatPct: 22,
+        muscleLb: 138,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
 
   @override
-  Stream<DailyMetric?> streamTodayMetric() => Stream.value(null);
+  Stream<DailyMetric?> streamTodayMetric() => Stream.value(DailyMetric(
+        id: 'today',
+        date: DateTime.now(),
+        calories: 1430,
+        sleepHours: 7.5,
+        steps: 8000,
+        waterCups: 5,
+        wellnessScore: 85,
+        recoveryPct: 72,
+        energyScore: 7.2,
+        calorieTarget: 2100,
+        waterTarget: 8,
+      ));
 
   @override
   Stream<List<Activity>> streamActivities() => Stream.value([]);

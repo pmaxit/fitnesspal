@@ -20,7 +20,6 @@ class _AvatarWidgetState extends State<AvatarWidget> {
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
     final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
-    final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

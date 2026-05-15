@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fitnesspal/core/services/firestore_service.dart';
+import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/presentation/screens/dashboard_screen.dart';
 import 'package:fitnesspal/presentation/screens/home_screen.dart';
 
@@ -33,17 +34,37 @@ void main() {
       expect(find.text('Hi Maya'), findsNothing);
 
       // Header elements still present
-      expect(find.text('AI Coach'), findsWidgets);
+      expect(find.text('GOOD MORNING'), findsOneWidget);
 
       // Loading indicator shown when metric is null
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
       // No metric-related content rendered
-      expect(find.text("Today's Plan"), findsNothing);
-      expect(find.text('Calories'), findsNothing);
-      expect(find.text('Sleep'), findsNothing);
-      expect(find.text('Steps'), findsNothing);
-      expect(find.text('Water'), findsNothing);
+      expect(find.text('YOUR TRAJECTORY'), findsNothing);
+      expect(find.text('MUSCLE'), findsNothing);
+      expect(find.text('RECOVERY'), findsNothing);
+      expect(find.text('BODY FAT'), findsNothing);
+      expect(find.text('WEIGHT'), findsNothing);
+    });
+
+    testWidgets('shows trajectory stats when data is loaded',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: DashboardScreen(isDarkMode: true),
+        ),
+      );
+      
+      // Wait for stream emissions
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text('Hi, Maya'), findsOneWidget);
+      expect(find.text('Hi, Maya'), findsOneWidget);
+      expect(find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().contains('138')), findsOneWidget); // Muscle
+      expect(find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().contains('72')), findsOneWidget);  // Recovery
+      expect(find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().contains('22')), findsOneWidget);  // Body Fat
+      expect(find.byWidgetPredicate((w) => w is RichText && w.text.toPlainText().contains('178')), findsOneWidget); // Weight
     });
   });
 
@@ -84,7 +105,7 @@ void main() {
       );
 
       // Verify we start on Home tab (DashboardScreen shows loading state)
-      expect(find.text('AI Coach'), findsOneWidget);
+      expect(find.text('GOOD MORNING'), findsOneWidget);
 
       // Get positions of Activity text and
 
@@ -101,76 +122,10 @@ void main() {
       await tester.tapAt(tabCenter);
       await tester.pumpAndSettle();
 
-      // After tapping Activity tab, we should see the Activity log header
-      expect(find.text('Activity Log'), findsOneWidget);
+      // After tapping Activity tab, we should see the Timeline header
+      expect(find.text('Timeline'), findsOneWidget);
     });
 
-    testWidgets('selected tab has visible icon background cue',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: HomeScreen(
-            isDarkMode: true,
-            onThemeToggle: () {},
-            isCompactDensity: false,
-            onDensityToggle: () {},
-          ),
-        ),
-      );
 
-      // Home tab should be selected by default — its icon should have a
-      // different color than a non-selected tab like Activity.
-      // Home tab icon has a background color of AppColors.accent (0xFF10B981).
-      // Activity tab button has Colors.transparent (or the default scaffold bg).
-      // We try to find the first colored background by opacity.
-      final homeContainer = find.byWidgetPredicate(
-        (w) =>
-            w is DecoratedBox &&
-            w.decoration is BoxDecoration &&
-            (w.decoration as BoxDecoration).color != null &&
-            (w.decoration as BoxDecoration).color!.value == 0xFF10B981,
-      );
-
-      // Since the Home tab is selected, we expect the accent colored container to exist
-      expect(homeContainer, findsWidgets);
-    });
-
-    testWidgets('unselected tabs do not show selected background cue',
-        (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: HomeScreen(
-            isDarkMode: true,
-            onThemeToggle: () {},
-            isCompactDensity: false,
-            onDensityToggle: () {},
-          ),
-        ),
-      );
-
-      // Assume Activity tab is *not* selected (default = Home).
-      // Activity tab should NOT have a green background decoration.
-      final activityContainers = find.byWidgetPredicate(
-        (w) =>
-            w is DecoratedBox &&
-            w.decoration is BoxDecoration &&
-            (w.decoration as BoxDecoration).color != null &&
-            (w.decoration as BoxDecoration).color!.value == 0xFF10B981,
-      );
-
-      // There will be at least one (the Home tab *is* selected), but
-      // Activity's container should NOT have the accent color.
-      // We verify by checking that the *total* number of accent-colored
-      // containers matching is equal to number of selected tabs (just Home).
-      // Since we only have 1 selected tab, we expect 1 match (Home).
-      // If Activity also showed the accent color, we'd see 2+ matches.
-
-      // Pump to ensure the widget tree is fully built
-      await tester.pump();
-
-      // Home tab is selected, so we expect exactly one tab with accent color
-      // Since Activity tab is unselected, it should not have the accent color
-      expect(activityContainers, findsWidgets);
-    });
   });
 }

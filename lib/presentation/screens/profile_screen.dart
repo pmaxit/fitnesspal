@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fitnesspal/core/models/daily_metric.dart';
 import 'package:fitnesspal/core/models/user_profile.dart';
 import 'package:fitnesspal/core/services/firestore_service.dart';
+import 'package:fitnesspal/core/services/auth_service.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -44,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = widget.isDarkMode;
     final bgCard = isDark ? AppColors.darkBgCard : AppColors.lightBgCard;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
     final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
 
@@ -51,268 +54,363 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final initials = _profile?.initials;
-    final name = _profile?.name;
-    final bio = _profile?.bio;
-    final goals = _profile?.goals;
-    final hasGoals = goals != null && goals.isNotEmpty;
-    final scoreValue = _metric?.wellnessScore;
-    final hasMetric = scoreValue != null;
+    final initials = _profile?.initials ?? 'MC';
+    final name = _profile?.name ?? 'Maya Chen';
+    final age = _profile?.age ?? 28;
+    final heightInches = _profile?.heightInches ?? 67;
+    final weight = _profile?.weightLb.toStringAsFixed(0) ?? '178';
+    final activityLevel = _profile?.activityLevel ?? 'moderate activity';
+    
+    final goalWeight = _profile?.goalWeightLb.toStringAsFixed(0) ?? '168';
+    final diff = (_profile?.weightLb ?? 178) - (_profile?.goalWeightLb ?? 168);
+    final weightDiff = diff > 0 ? '${diff.toStringAsFixed(0)} lb to go' : 'Goal reached';
+    
+    final calorieTarget = _profile?.calorieTarget ?? 2100;
+    final sleepGoal = _profile?.sleepGoalHr ?? 8;
+    final fitnessExp = _profile?.fitnessExperience ?? 'Intermediate';
+    final isVegetarian = _profile?.isVegetarian ?? false;
+    
+    final heightFt = heightInches ~/ 12;
+    final heightIn = heightInches % 12;
+
+    final scoreValue = _metric?.wellnessScore ?? 8.4;
+    final displayScore = (scoreValue * 10).round();
 
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('PROFILE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 0.1)),
-                  const SizedBox(height: 4),
-                  Text('Profile', style: Theme.of(context).textTheme.displayMedium),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Profile', style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 32, fontWeight: FontWeight.w900, color: fg1)),
+                      const SizedBox(height: 4),
+                      Text('$name · joined Jan 2026', style: TextStyle(fontSize: 14, color: fg2)),
+                    ],
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: bgCard,
+                      border: Border.all(color: border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      icon: Icon(LucideIcons.logOut, color: fg1),
+                      onPressed: () async {
+                        await AuthService().signOut();
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
 
             // User hero
-            if (_profile != null)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: bgCard,
-                  border: Border.all(color: border),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.accent, Color(0xFF059669)],
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          initials ?? '',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (name != null)
-                            Text(
-                              name,
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                          if (name != null && bio != null) const SizedBox(height: 2),
-                          if (bio != null)
-                            Text(
-                              bio,
-                              style: TextStyle(fontSize: 12, color: fg2),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: bgCard,
+                border: Border.all(color: border),
+                borderRadius: BorderRadius.circular(20),
               ),
-
-            // Goals
-            if (hasGoals) _goalPills(context, isDark, goals),
-
-            // Wellness score ring
-            if (hasMetric)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: bgCard,
-                  border: Border.all(color: border),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Wellness Score', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Row(
+                children: [
+                  Container(
+                    width: 68,
+                    height: 68,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.accent, Color(0xFF059669)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Text(
+                          name,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, fontSize: 20, color: fg1),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$age · $heightFt\'$heightIn" · $weight lb · ${activityLevel.toLowerCase()}',
+                          style: TextStyle(fontSize: 13, color: fg2),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            Text('${scoreValue.toStringAsFixed(1)} / 10', style: Theme.of(context).textTheme.displayMedium),
-                            const SizedBox(height: 4),
-                            Text('Excellent health', style: TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
+                            _goalPill('Lose ${diff > 0 ? diff.toStringAsFixed(0) : "0"} lb', true, bgCard, border, isDark),
+                            if (isVegetarian) _goalPill('Vegetarian', false, bgCard, border, isDark),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Wellness score ring card
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: bgCard,
+                border: Border.all(color: border),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
                         SizedBox(
                           width: 80,
                           height: 80,
                           child: CustomPaint(
-                            painter: WellnessRingPainter(percentage: (scoreValue / 10.0 * 100).round().toDouble()),
+                            painter: WellnessRingPainter(percentage: displayScore.toDouble()),
                           ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              displayScore.toString(),
+                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: fg1, height: 1),
+                            ),
+                            const SizedBox(width: 4),
+                            RotatedBox(
+                              quarterTurns: 3,
+                              child: Text(
+                                'WELLNESS',
+                                style: TextStyle(fontSize: 7, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 1),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-
-            // Body metrics
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'BODY METRICS',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 0.1),
-              ),
-            ),
-
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: bgCard,
-                border: Border.all(color: border),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  _metricRow('Height', '5\'11"', isDark),
-                  _metricRow('Weight', '178 lbs', isDark),
-                  _metricRow('BMI', '24.8', isDark),
-                  _metricRow('Body Fat %', '18.2%', isDark),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('AI WELLNESS SCORE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: fg3, letterSpacing: 1.2)),
+                        const SizedBox(height: 6),
+                        Text(
+                          "You've been steady this month — sleep, training and hydration are all trending up.",
+                          style: TextStyle(fontSize: 13, color: fg1, height: 1.4, fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(LucideIcons.sparkles, size: 14, color: AppColors.accent),
+                            const SizedBox(width: 4),
+                            Text(
+                              '+6 from last month',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
 
-            // Integrations
+            // Goals Section Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text(
-                'DEVICE INTEGRATIONS',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 0.1),
-              ),
-            ),
-
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: bgCard,
-                border: Border.all(color: border),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _integrationRow('Apple Health', Icons.apple, isDark),
-                  _integrationRow('WHOOP', Icons.watch, isDark),
-                  _integrationRow('Garmin', Icons.directions_run, isDark),
-                  _integrationRow('Fitbit', Icons.favorite, isDark),
+                  Text(
+                    'GOALS',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: fg3, letterSpacing: 1.2),
+                  ),
+                  Row(
+                    children: [
+                      Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent)),
+                      const SizedBox(width: 2),
+                      Icon(LucideIcons.chevronRight, size: 16, color: AppColors.accent),
+                    ],
+                  ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 30),
+            // Goals List
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: bgCard,
+                border: Border.all(color: border),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  _goalListItem(
+                    icon: LucideIcons.target, 
+                    iconColor: AppColors.accent, 
+                    title: 'Goal weight', 
+                    subtitle: weightDiff, 
+                    value: '$goalWeight lb', 
+                    isDark: isDark, 
+                    showDivider: true
+                  ),
+                  _goalListItem(
+                    icon: LucideIcons.zap, 
+                    iconColor: AppColors.accent, 
+                    title: 'Calorie target', 
+                    subtitle: 'Daily limit', 
+                    value: '$calorieTarget kcal', 
+                    isDark: isDark, 
+                    showDivider: true
+                  ),
+                  _goalListItem(
+                    icon: LucideIcons.heart, 
+                    iconColor: AppColors.accent, 
+                    title: 'Activity level', 
+                    subtitle: 'General activity', 
+                    value: activityLevel, 
+                    isDark: isDark, 
+                    showDivider: true
+                  ),
+                  _goalListItem(
+                    icon: LucideIcons.refreshCw, 
+                    iconColor: AppColors.accent, 
+                    title: 'Sleep goal', 
+                    subtitle: 'Nightly target', 
+                    value: '$sleepGoal hr', 
+                    isDark: isDark, 
+                    showDivider: true
+                  ),
+                  _goalListItem(
+                    icon: LucideIcons.navigation, 
+                    iconColor: AppColors.accent, 
+                    title: 'Fitness experience', 
+                    subtitle: 'Training level', 
+                    value: fitnessExp, 
+                    isDark: isDark, 
+                    showDivider: false
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _goalPills(BuildContext context, bool isDark, List<String> goals) {
-    final bgPill = isDark ? AppColors.darkBgPill : AppColors.lightBgPill;
-    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: goals.map((goal) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _goalPill(goal, bgPill, border),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _goalPill(String label, Color bgPill, Color border) {
+  Widget _goalPill(String label, bool isAccent, Color bgCard, Color border, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.accentSoft,
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        color: isAccent ? AppColors.accentSoft2 : Colors.transparent,
+        border: Border.all(color: isAccent ? AppColors.accent.withOpacity(0.3) : border),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 11,
+        style: TextStyle(
+          fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: AppColors.accent,
+          color: isAccent ? AppColors.accent : (isDark ? AppColors.darkFg2 : AppColors.lightFg2),
         ),
       ),
     );
   }
 
-  Widget _metricRow(String label, String value, bool isDark) {
+  Widget _goalListItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String value,
+    required bool isDark,
+    required bool showDivider,
+  }) {
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
+    final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
+    final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-              Text(value, style: TextStyle(fontSize: 13, color: fg3, fontVariations: const [FontVariation('wght', 700)])),
-            ],
-          ),
-        ),
-        if (label != 'Body Fat %')
-          Divider(height: 0, thickness: 1, color: border),
-      ],
-    );
-  }
-
-  Widget _integrationRow(String label, IconData icon, bool isDark) {
-    final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.accent, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-              const Icon(Icons.chevron_right, size: 20),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg1)),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: TextStyle(fontSize: 13, color: fg3)),
+                  ],
+                ),
+              ),
+              Text(value, style: TextStyle(fontSize: 15, color: fg2)),
+              const SizedBox(width: 8),
+              Icon(LucideIcons.chevronRight, size: 18, color: fg3),
             ],
           ),
         ),
-        if (label != 'Fitbit')
-          Divider(height: 0, thickness: 1, color: border),
+        if (showDivider)
+          Divider(height: 0, thickness: 1, color: border, indent: 72),
       ],
     );
   }
@@ -326,14 +424,14 @@ class WellnessRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..strokeWidth = 4
+      ..strokeWidth = 6.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - 4) / 2;
+    final radius = (size.width - paint.strokeWidth) / 2;
 
-    paint.color = AppColors.accent.withOpacity(0.2);
+    paint.color = AppColors.accent.withOpacity(0.15);
     canvas.drawCircle(center, radius, paint);
 
     paint.color = AppColors.accent;
