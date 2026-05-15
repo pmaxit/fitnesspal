@@ -186,7 +186,7 @@ Max Concurrent: 4
 > Implementation + Test = ONE Task where practical. Never separate verification from the implementation it validates.
 > EVERY task MUST have: Recommended Agent Profile + Parallelization info + QA Scenarios.
 
-- [ ] 1. Dashboard contract and layout foundation
+- [x] 1. Dashboard contract and layout foundation
 
   **What to do**:
   - Inspect `lib/presentation/screens/dashboard_screen.dart` and preserve the public constructor contract expected by `home_screen.dart`.
@@ -259,7 +259,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart`
   - Pre-commit: `flutter analyze`
 
-- [ ] 2. Premium visual tokens and static dashboard data
+- [x] 2. Premium visual tokens and static dashboard data
 
   **What to do**:
   - Define curated static dashboard display values near the dashboard implementation or in a small private helper structure: Maya greeting, date/weather/activity summary, score `84`, metrics, mini-card values, trend labels, AI insight, and suggestions.
@@ -328,7 +328,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart` or small dashboard-local helper
   - Pre-commit: `flutter analyze`
 
-- [ ] 3. Progress and glow primitives audit/adaptation
+- [x] 3. Progress and glow primitives audit/adaptation
 
   **What to do**:
   - Reuse `ProgressRing` where suitable for the score indicator and mini-card circular progress rings.
@@ -397,7 +397,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/widgets/progress_ring.dart`, `lib/presentation/screens/dashboard_screen.dart`
   - Pre-commit: `flutter analyze`
 
-- [ ] 4. Bottom navigation preservation check
+- [x] 4. Bottom navigation preservation check
 
   **What to do**:
   - Verify `home_screen.dart` already provides the five requested tabs: Home, Activity, Meals, Habits, Profile.
@@ -468,7 +468,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/home_screen.dart` if changed
   - Pre-commit: `flutter analyze`
 
-- [ ] 5. Header, notification, and AI assistant button
+- [x] 5. Header, notification, and AI assistant button
 
   **What to do**:
   - Build the top dashboard section with greeting “Hi Maya”, a thin subtext date/weather/activity summary, a notification affordance, and an AI assistant floating button.
@@ -540,7 +540,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart`
   - Pre-commit: `flutter analyze`
 
-- [ ] 6. Hero wellness card, score ring, and silhouette
+- [x] 6. Hero wellness card, score ring, and silhouette
 
   **What to do**:
   - Build the large main wellness overview card with rich depth, rounded glassmorphism feel, soft gradients, subtle shadows, and emerald light accents.
@@ -618,7 +618,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart`, optionally `lib/presentation/widgets/progress_ring.dart`
   - Pre-commit: `flutter analyze`
 
-- [ ] 7. Metric mini-card grid
+- [x] 7. Metric mini-card grid
 
   **What to do**:
   - Build the secondary metrics grid with four mini cards: Calories, Sleep, Steps, Water intake.
@@ -692,7 +692,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart`
   - Pre-commit: `flutter analyze`
 
-- [ ] 8. CTA and adaptive AI messaging polish
+- [x] 8. CTA and adaptive AI messaging polish
 
   **What to do**:
   - Add the emerald gradient primary CTA labeled “Today’s Plan”.
@@ -765,7 +765,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart`
   - Pre-commit: `flutter analyze`
 
-- [ ] 9. Full screen integration and responsive iPhone portrait polish
+- [x] 9. Full screen integration and responsive iPhone portrait polish
 
   **What to do**:
   - Integrate header, hero, CTA/AI messaging, metric grid, and bottom navigation into a cohesive premium dashboard.
@@ -839,7 +839,7 @@ Max Concurrent: 4
   - Files: `lib/presentation/screens/dashboard_screen.dart`, `lib/presentation/screens/home_screen.dart` if changed
   - Pre-commit: `flutter analyze`
 
-- [ ] 10. Flutter widget tests after implementation
+- [x] 10. Flutter widget tests after implementation
 
   **What to do**:
   - Add or update Flutter widget tests under `test/` for dashboard-visible content.
@@ -910,7 +910,7 @@ Max Concurrent: 4
   - Files: `test/widget_test.dart` or new `test/dashboard_screen_test.dart`
   - Pre-commit: `flutter test`
 
-- [ ] 11. Analyzer/test cleanup and evidence prep
+- [x] 11. Analyzer/test cleanup and evidence prep
 
   **What to do**:
   - Run `flutter analyze` and `flutter test` after all implementation/test work.
@@ -992,19 +992,19 @@ Max Concurrent: 4
 > **Do NOT auto-proceed after verification. Wait for user's explicit approval before marking work complete.**
 > **Never mark F1-F4 as checked before getting user's okay.** Rejection or user feedback -> fix -> re-run -> present again -> wait for okay.
 
-- [ ] F1. **Plan Compliance Audit** — `oracle`
+- [x] F1. **Plan Compliance Audit** — `oracle`
   Read the plan end-to-end. For each "Must Have": verify implementation exists through source inspection and app/widget execution. For each "Must NOT Have": search codebase for forbidden scope creep and dependency additions. Check evidence files exist in `.sisyphus/evidence/`. Compare deliverables against plan.
   Output: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **Code Quality Review** — `unspecified-high`
+- [x] F2. **Code Quality Review** — `unspecified-high`
   Run `flutter analyze` and `flutter test`. Review changed Dart files for unused imports, overly generic helper names, excessive comments, layout hacks, hard-to-maintain magic numbers, and unnecessary dependencies. Confirm constructor contracts remain compatible.
   Output: `Analyze [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **Real Visual Manual QA** — `unspecified-high`
+- [x] F3. **Real Visual Manual QA** — `unspecified-high`
   Start from clean state. Run the Flutter app in a mobile portrait viewport/emulator/web target where available. Execute EVERY QA scenario from EVERY task and capture screenshots under `.sisyphus/evidence/final-qa/`. Verify visual hierarchy, dark theme, emerald accents, no clutter, bottom nav, and static content.
   Output: `Scenarios [N/N pass] | Visual Checks [N/N] | Evidence [paths] | VERDICT`
 
-- [ ] F4. **Scope Fidelity Check** — `deep`
+- [x] F4. **Scope Fidelity Check** — `deep`
   For each task: compare "What to do" against actual diff. Verify all requested UI elements exist and no extra screens, live data wiring, or navigation rewrites were added. Check "Must NOT do" compliance and flag unaccounted changes.
   Output: `Tasks [N/N compliant] | Scope Creep [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 
