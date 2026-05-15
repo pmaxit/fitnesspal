@@ -1,19 +1,117 @@
 import 'package:flutter/material.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
+import 'package:fitnesspal/core/services/firestore_service.dart';
+import 'package:fitnesspal/core/models/habit.dart';
 
-class HabitsScreen extends StatelessWidget {
+class HabitsScreen extends StatefulWidget {
   final bool isDarkMode;
 
   const HabitsScreen({Key? key, required this.isDarkMode}) : super(key: key);
 
   @override
+  State<HabitsScreen> createState() => _HabitsScreenState();
+}
+
+class _HabitsScreenState extends State<HabitsScreen> {
+  List<Habit> _habits = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    FirestoreService().streamHabits().listen((habits) {
+      if (mounted) {
+        setState(() {
+          _habits = habits;
+          _isLoading = false;
+        });
+      }
+    });
+  }
+
+  Color _parseColor(String colorStr) {
+    switch (colorStr.toLowerCase()) {
+      case 'green':
+        return Colors.green;
+      case 'blue':
+        return Colors.blue;
+      case 'cyan':
+        return Colors.cyan;
+      case 'purple':
+        return Colors.purple;
+      case 'indigo':
+        return Colors.indigo;
+      case 'orange':
+        return Colors.orange;
+      case 'red':
+        return Colors.red;
+      case 'teal':
+        return Colors.teal;
+      case 'pink':
+        return Colors.pink;
+      case 'amber':
+        return Colors.amber;
+      default:
+        try {
+          final hex = colorStr.replaceFirst('#', '');
+          return Color(int.parse('FF$hex', radix: 16));
+        } catch (_) {
+          return Colors.green;
+        }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = isDarkMode;
+    final isDark = widget.isDarkMode;
     final bgCard = isDark ? AppColors.darkBgCard : AppColors.lightBgCard;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
     final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
+
+    if (_isLoading) {
+      return SafeArea(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_habits.isEmpty) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('HABITS',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: fg3,
+                            letterSpacing: 0.1)),
+                    const SizedBox(height: 4),
+                    Text('Habits', style: Theme.of(context).textTheme.displayMedium),
+                  ],
+                ),
+              ),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
+                  child: Text('No habits yet',
+                      style: TextStyle(fontSize: 14, color: fg2)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -25,7 +123,12 @@ class HabitsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('HABITS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 0.1)),
+                  Text('HABITS',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: fg3,
+                          letterSpacing: 0.1)),
                   const SizedBox(height: 4),
                   Text('Habits', style: Theme.of(context).textTheme.displayMedium),
                 ],
@@ -44,7 +147,8 @@ class HabitsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Current Streak', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
+                  Text('Current Streak',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -52,21 +156,28 @@ class HabitsScreen extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('23 days', style: Theme.of(context).textTheme.displayMedium),
+                          Text(_habits.first.streak,
+                              style: Theme.of(context).textTheme.displayMedium),
                           const SizedBox(height: 4),
-                          Text('You\'re on fire! 🔥', style: TextStyle(fontSize: 12, color: fg2)),
+                          Text('You\'re on fire! 🔥',
+                              style: TextStyle(fontSize: 12, color: fg2)),
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: AppColors.warning.withOpacity(0.15),
-                          border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                          border: Border.all(
+                              color: AppColors.warning.withOpacity(0.3)),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '🔥 23',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.warning),
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.warning),
                         ),
                       ),
                     ],
@@ -106,26 +217,31 @@ class HabitsScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 'YOUR HABITS',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 0.1),
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: fg3,
+                    letterSpacing: 0.1),
               ),
             ),
 
             Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              margin:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: bgCard,
                 border: Border.all(color: border),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
-                children: [
-                  _habitRow(context, 'Morning Run', '12 days', true, Colors.green, isDark),
-                  _habitRow(context, 'Read 30 min', '8 days', false, Colors.blue, isDark),
-                  _habitRow(context, 'Drink 8 cups water', '21 days', true, Colors.cyan, isDark),
-                  _habitRow(context, 'Yoga/Stretch', '5 days', false, Colors.purple, isDark),
-                  _habitRow(context, 'Sleep 8 hours', '18 days', true, Colors.indigo, isDark),
-                  _habitRow(context, 'Meditation', '10 days', false, Colors.orange, isDark),
-                ],
+                children: _habits.map((h) {
+                  final color = _parseColor(h.iconColor);
+                  return GestureDetector(
+                    onTap: () => FirestoreService().toggleHabit(h.id),
+                    child: _habitRow(
+                        context, h.name, h.streak, h.isCompleted, color, isDark),
+                  );
+                }).toList(),
               ),
             ),
 
@@ -143,10 +259,10 @@ class HabitsScreen extends StatelessWidget {
     final heatMap = isDark ? AppColors.darkHeatMap : AppColors.lightHeatMap;
 
     final days = List.generate(42, (i) {
-      if (i < 5) return 0; // Empty cells
+      if (i < 5) return 0;
       final day = i - 5 + 1;
       if (day > 30) return 0;
-      return (day * 7 + i) % 5; // Random heat level
+      return (day * 7 + i) % 5;
     });
 
     return Container(
@@ -160,7 +276,8 @@ class HabitsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('May 2026', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
+          Text('May 2026',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
           const SizedBox(height: 10),
           GridView.builder(
             shrinkWrap: true,
@@ -177,9 +294,9 @@ class HabitsScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: heat == 0 ? Colors.transparent : heatMap[heat],
                   borderRadius: BorderRadius.circular(4),
-                  border: index == 27 // Today
-                  ? Border.all(color: AppColors.accent, width: 2)
-                  : null,
+                  border: index == 27
+                      ? Border.all(color: AppColors.accent, width: 2)
+                      : null,
                 ),
               );
             },
@@ -189,7 +306,8 @@ class HabitsScreen extends StatelessWidget {
     );
   }
 
-  Widget _habitRow(BuildContext context, String habit, String streak, bool done, Color color, bool isDark) {
+  Widget _habitRow(BuildContext context, String habit, String streak,
+      bool done, Color color, bool isDark) {
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
 
@@ -211,15 +329,17 @@ class HabitsScreen extends StatelessWidget {
                   color: done ? AppColors.accent : Colors.transparent,
                 ),
                 child: done
-                  ? const Icon(Icons.check, color: Colors.white, size: 16)
-                  : null,
+                    ? const Icon(Icons.check, color: Colors.white, size: 16)
+                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(habit, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    Text(habit,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Row(
                       children: [
@@ -244,8 +364,7 @@ class HabitsScreen extends StatelessWidget {
             ],
           ),
         ),
-        if (habit != 'Meditation')
-          Divider(height: 0, thickness: 1, indent: 56, color: border),
+        Divider(height: 0, thickness: 1, indent: 56, color: border),
       ],
     );
   }

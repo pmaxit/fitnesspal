@@ -1,19 +1,63 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:fitnesspal/core/models/daily_metric.dart';
+import 'package:fitnesspal/core/models/user_profile.dart';
+import 'package:fitnesspal/core/services/firestore_service.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final bool isDarkMode;
 
   const ProfileScreen({Key? key, required this.isDarkMode}) : super(key: key);
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  UserProfile? _profile;
+  DailyMetric? _metric;
+  StreamSubscription<UserProfile?>? _profileSub;
+  StreamSubscription<DailyMetric?>? _metricSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileSub = FirestoreService()
+        .streamUserProfile()
+        .listen((profile) => setState(() => _profile = profile));
+    _metricSub = FirestoreService()
+        .streamTodayMetric()
+        .listen((metric) => setState(() => _metric = metric));
+  }
+
+  @override
+  void dispose() {
+    _profileSub?.cancel();
+    _metricSub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = isDarkMode;
+    final isDark = widget.isDarkMode;
     final bgCard = isDark ? AppColors.darkBgCard : AppColors.lightBgCard;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
-    final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
     final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
+
+    if (_profile == null && _metric == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final initials = _profile?.initials;
+    final name = _profile?.name;
+    final bio = _profile?.bio;
+    final goals = _profile?.goals;
+    final hasGoals = goals != null && goals.isNotEmpty;
+    final scoreValue = _metric?.wellnessScore;
+    final hasMetric = scoreValue != null;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -33,97 +77,101 @@ class ProfileScreen extends StatelessWidget {
             ),
 
             // User hero
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: bgCard,
-                border: Border.all(color: border),
-                borderRadius: BorderRadius.circular(20),
+            if (_profile != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: bgCard,
+                  border: Border.all(color: border),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.accent, Color(0xFF059669)],
+                        ),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          initials ?? '',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (name != null)
+                            Text(
+                              name,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          if (name != null && bio != null) const SizedBox(height: 2),
+                          if (bio != null)
+                            Text(
+                              bio,
+                              style: TextStyle(fontSize: 12, color: fg2),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.accent, Color(0xFF059669)],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Text(
-                        'AJ',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+
+            // Goals
+            if (hasGoals) _goalPills(context, isDark, goals),
+
+            // Wellness score ring
+            if (hasMetric)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: bgCard,
+                  border: Border.all(color: border),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Wellness Score', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Alex Johnson',
-                          style: Theme.of(context).textTheme.titleLarge,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${scoreValue.toStringAsFixed(1)} / 10', style: Theme.of(context).textTheme.displayMedium),
+                            const SizedBox(height: 4),
+                            Text('Excellent health', style: TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Wellness focused • 28 yo',
-                          style: TextStyle(fontSize: 12, color: fg2),
+                        SizedBox(
+                          width: 80,
+                          height: 80,
+                          child: CustomPaint(
+                            painter: WellnessRingPainter(percentage: (scoreValue / 10.0 * 100).round().toDouble()),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-
-            // Goals
-            _goalPills(context, isDark),
-
-            // Wellness score ring
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: bgCard,
-                border: Border.all(color: border),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Wellness Score', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg3)),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('8.4 / 10', style: Theme.of(context).textTheme.displayMedium),
-                          const SizedBox(height: 4),
-                          Text('Excellent health', style: TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
-                      SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: CustomPaint(
-                          painter: WellnessRingPainter(percentage: 84),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
 
             // Body metrics
             Padding(
@@ -184,7 +232,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _goalPills(BuildContext context, bool isDark) {
+  Widget _goalPills(BuildContext context, bool isDark, List<String> goals) {
     final bgPill = isDark ? AppColors.darkBgPill : AppColors.lightBgPill;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
 
@@ -193,15 +241,12 @@ class ProfileScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
-          children: [
-            _goalPill('Lose 5 lbs', bgPill, border),
-            const SizedBox(width: 8),
-            _goalPill('Build muscle', bgPill, border),
-            const SizedBox(width: 8),
-            _goalPill('Improve stamina', bgPill, border),
-            const SizedBox(width: 8),
-            _goalPill('Better sleep', bgPill, border),
-          ],
+          children: goals.map((goal) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _goalPill(goal, bgPill, border),
+            );
+          }).toList(),
         ),
       ),
     );
