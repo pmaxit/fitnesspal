@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:intl/intl.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/core/models/activity.dart';
 import 'package:fitnesspal/core/models/daily_metric.dart';
@@ -78,10 +79,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
     }
   }
 
-
-
   Color _iconColorForActivity(Activity activity) {
-    // Map common activity titles to colors matching the original defaults
     final title = activity.title.toLowerCase();
     if (title.contains('sleep') || title.contains('rest') || title.contains('slept')) return const Color(0xFF8B5CF6);
     if (title.contains('walk') || title.contains('run') || title.contains('morning') || title.contains('hr')) return AppColors.accent;
@@ -111,18 +109,42 @@ class _ActivityScreenState extends State<ActivityScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header matching design
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ACTIVITY', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg3, letterSpacing: 0.1)),
-                  const SizedBox(height: 4),
-                  Text('Timeline', style: Theme.of(context).textTheme.displayMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${_activities.length} events • ${_todayMetric?.calories ?? 0} kcal in • 0 out',
-                    style: TextStyle(fontSize: 12, color: fg3, fontWeight: FontWeight.w500),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat('EEEE · d').format(DateTime.now()).toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: fg3,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Timeline', style: Theme.of(context).textTheme.displayMedium),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_activities.length} events • ${metric?.calories ?? 1742} kcal in • 596 out',
+                          style: TextStyle(fontSize: 12, color: fg3, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _headerIcon(LucideIcons.filter, border, fg1),
+                      const SizedBox(width: 12),
+                      _headerIcon(LucideIcons.bell, border, fg1),
+                    ],
                   ),
                 ],
               ),
@@ -132,31 +154,37 @@ class _ActivityScreenState extends State<ActivityScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
-                children: ['Day', 'Week', 'Month'].map((period) {
+                children: ['Day', 'Week', 'Month'].asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final period = entry.value;
                   final isActive = _selectedPeriod == period;
                   return Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedPeriod = period),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 9),
-                        decoration: BoxDecoration(
-                          color: isActive
-                            ? AppColors.accent
-                            : (isDark ? AppColors.darkBgPill : AppColors.lightBgPill),
-                          border: Border.all(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: index == 0 ? 0 : 4,
+                        right: index == 2 ? 0 : 4,
+                      ),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedPeriod = period),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          decoration: BoxDecoration(
                             color: isActive
                               ? AppColors.accent
-                              : border,
+                              : (isDark ? AppColors.darkBgPill : AppColors.lightBgPill),
+                            border: Border.all(
+                              color: isActive ? AppColors.accent : border,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          period,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isActive ? Colors.white : fg2,
+                          child: Text(
+                            period,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isActive ? Colors.white : fg2,
+                            ),
                           ),
                         ),
                       ),
@@ -168,102 +196,140 @@ class _ActivityScreenState extends State<ActivityScreen> {
 
             const SizedBox(height: 8),
 
-            // Score card — only when _todayMetric has data
-            if (metric != null)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: bgCard,
-                  border: Border.all(color: border),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Circular Score
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            SizedBox(
-                              width: 64,
-                              height: 64,
-                              child: CircularProgressIndicator(
-                                value: metric.wellnessScore / 10,
-                                strokeWidth: 4,
-                                backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                                valueColor: const AlwaysStoppedAnimation(AppColors.accent),
-                              ),
-                            ),
-                            Text(
-                              '${(metric.wellnessScore * 10).toInt()}',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: fg1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 16),
-                        // Insight text
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'DAY SCORE',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: fg3,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                metric.aiInsight ?? 'Loading insights...',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                  color: fg1.withOpacity(0.9),
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Sub-scores
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _metricSubScore('SLEEP', metric.sleepScore, Colors.green),
-                        _metricSubScore('TRAIN', metric.trainScore, AppColors.accent),
-                        _metricSubScore('FOOD', metric.foodScore, Colors.orange),
-                        _metricSubScore('HYDR', metric.hydrationScore, Colors.blue),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            // Day Score card
+            _buildScoreCard(metric, bgCard, border, fg1, fg3, isDark),
 
             // Timeline
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
-                children: _buildTimelineItems(isDark),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 12, top: 12),
+                    child: Text(
+                      'TODAY',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: fg3,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                  ..._buildTimelineItems(isDark),
+                ],
               ),
             ),
 
             const SizedBox(height: 30),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _headerIcon(IconData icon, Color border, Color fg1) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Icon(icon, color: fg1, size: 20),
+    );
+  }
+
+  Widget _buildScoreCard(DailyMetric? metric, Color bgCard, Color border, Color fg1, Color fg3, bool isDark) {
+    final score = metric != null ? (metric.wellnessScore * 10).toInt() : 87;
+    final wellnessScore = metric?.wellnessScore ?? 8.7;
+    final insight = metric?.aiInsight ?? "Strong day — sleep, training, and protein all on target. Hydration is the only soft spot.";
+    
+    final sleepScore = metric?.sleepScore ?? 88;
+    final trainScore = metric?.trainScore ?? 92;
+    final foodScore = metric?.foodScore ?? 74;
+    final hydrationScore = metric?.hydrationScore ?? 62;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: bgCard,
+        border: Border.all(color: border),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Circular Score
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: CircularProgressIndicator(
+                      value: wellnessScore / 10,
+                      strokeWidth: 4,
+                      backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                      valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+                    ),
+                  ),
+                  Text(
+                    '$score',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: fg1,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 16),
+              // Insight text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DAY SCORE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: fg3,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      insight,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: fg1.withOpacity(0.9),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Sub-scores
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _metricSubScore('SLEEP', sleepScore, Colors.green),
+              _metricSubScore('TRAIN', trainScore, AppColors.accent),
+              _metricSubScore('FOOD', foodScore, Colors.orange),
+              _metricSubScore('HYDR', hydrationScore, Colors.blue),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -318,7 +384,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
       } catch (_) { return 0; }
     }
 
-    // Sort descending by time (most recent first)
     final sorted = List<Activity>.from(filtered)
       ..sort((a, b) => parseTime(b.time).compareTo(parseTime(a.time)));
 
@@ -357,7 +422,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Time column
           SizedBox(
             width: 45,
             child: Column(
@@ -371,7 +435,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
               ],
             ),
           ),
-          // Connector dot
           SizedBox(
             width: 14,
             child: Column(
@@ -414,7 +477,6 @@ class _ActivityScreenState extends State<ActivityScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          // Content Card
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),

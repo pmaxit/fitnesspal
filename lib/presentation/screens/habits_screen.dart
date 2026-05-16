@@ -3,7 +3,9 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/core/services/firestore_service.dart';
 import 'package:fitnesspal/core/services/ai_service.dart';
+import 'package:fitnesspal/core/services/habit_categories_service.dart';
 import 'package:fitnesspal/core/models/habit.dart';
+import 'package:fitnesspal/presentation/screens/habit_settings_screen.dart';
 import 'dart:async';
 
 class HabitsScreen extends StatefulWidget {
@@ -22,6 +24,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
   @override
   void initState() {
     super.initState();
+    HabitCategoriesService().initDefaultsIfNeeded();
     FirestoreService().streamHabits().listen((habits) {
       if (mounted) {
         setState(() {
@@ -115,7 +118,14 @@ class _HabitsScreenState extends State<HabitsScreen> {
             ),
             Row(
               children: [
-                _iconButton(LucideIcons.sliders, widget.isDarkMode),
+                _iconButton(LucideIcons.sliders, widget.isDarkMode, onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HabitSettingsScreen(isDarkMode: widget.isDarkMode),
+                    ),
+                  );
+                }),
                 const SizedBox(width: 12),
                 _iconButton(
                   LucideIcons.plus,

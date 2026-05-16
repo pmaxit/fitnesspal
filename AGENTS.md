@@ -44,6 +44,7 @@ test/
 | Dashboard | `lib/presentation/screens/dashboard_screen.dart` | Largest file, wellness score + metrics |
 | Reusable widgets | `lib/presentation/widgets/` | ProgressRing, AvatarWidget |
 | Tests | `test/` | Flutter widget tests |
+| Server API | `server/README.md` | Flask backend for habit analysis (OpenRouter/Gemma 3) |
 
 ## CONVENTIONS
 
