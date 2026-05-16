@@ -12,7 +12,12 @@
           "package_name": "com.example.fitnesspal"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "370106486674-drhnok9fka3idd5hdsm5gcgitnur3oe1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA761ppRkiHyKt1aBpoK3ZAxhgB3u-vRvI"

@@ -77,7 +77,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final yearStr = DateFormat('yyyy').format(now);
 
     final profile = _profile;
-    final metric = _metric;
+    final metric = _metric ?? DailyMetric(
+      id: 'default',
+      date: DateTime.now(),
+      calories: 0,
+      sleepHours: 0,
+      steps: 0,
+      waterCups: 0,
+      wellnessScore: 0.0,
+      calorieTarget: profile?.calorieTarget ?? 2100,
+      waterTarget: 8,
+    );
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBgApp : AppColors.lightBgApp,
@@ -93,7 +103,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 isDarkMode: isDark,
               ),
               const SizedBox(height: 24),
-              if (metric == null || profile == null)
+              if (profile == null)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 80),
                   child: Center(

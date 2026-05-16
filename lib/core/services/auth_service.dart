@@ -24,7 +24,9 @@ class AuthService {
 
   Future<void> _ensureGoogleSignInInitialized() async {
     if (!_googleSignInInitialized) {
-      await GoogleSignIn.instance.initialize();
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '370106486674-drhnok9fka3idd5hdsm5gcgitnur3oe1.apps.googleusercontent.com',
+      );
       _googleSignInInitialized = true;
     }
   }

@@ -121,7 +121,7 @@ class _ActivityScreenState extends State<ActivityScreen> {
                   Text('Timeline', style: Theme.of(context).textTheme.displayMedium),
                   const SizedBox(height: 4),
                   Text(
-                    '${_activities.length} events • ${_todayMetric?.calories ?? 0} kcal in • 596 out',
+                    '${_activities.length} events • ${_todayMetric?.calories ?? 0} kcal in • 0 out',
                     style: TextStyle(fontSize: 12, color: fg3, fontWeight: FontWeight.w500),
                   ),
                 ],

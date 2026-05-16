@@ -58,11 +58,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final name = _profile?.name ?? 'Maya Chen';
     final age = _profile?.age ?? 28;
     final heightInches = _profile?.heightInches ?? 67;
-    final weight = _profile?.weightLb.toStringAsFixed(0) ?? '178';
-    final activityLevel = _profile?.activityLevel ?? 'moderate activity';
+    final weight = _profile?.weightLb.toStringAsFixed(0) ?? '0';
+    final activityLevel = _profile?.activityLevel ?? 'low activity';
     
-    final goalWeight = _profile?.goalWeightLb.toStringAsFixed(0) ?? '168';
-    final diff = (_profile?.weightLb ?? 178) - (_profile?.goalWeightLb ?? 168);
+    final goalWeight = _profile?.goalWeightLb.toStringAsFixed(0) ?? '0';
+    final diff = (_profile?.weightLb ?? 0) - (_profile?.goalWeightLb ?? 0);
     final weightDiff = diff > 0 ? '${diff.toStringAsFixed(0)} lb to go' : 'Goal reached';
     
     final calorieTarget = _profile?.calorieTarget ?? 2100;
@@ -73,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final heightFt = heightInches ~/ 12;
     final heightIn = heightInches % 12;
 
-    final scoreValue = _metric?.wellnessScore ?? 8.4;
+    final scoreValue = _metric?.wellnessScore ?? 0.0;
     final displayScore = (scoreValue * 10).round();
 
     return SafeArea(
@@ -235,20 +235,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Text('AI WELLNESS SCORE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: fg3, letterSpacing: 1.2)),
                         const SizedBox(height: 6),
                         Text(
-                          "You've been steady this month — sleep, training and hydration are all trending up.",
+                          _metric != null 
+                              ? "You've been steady this month — sleep, training and hydration are all trending up."
+                              : "Log your first activity to see your AI wellness score and insights.",
                           style: TextStyle(fontSize: 13, color: fg1, height: 1.4, fontWeight: FontWeight.w500),
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Icon(LucideIcons.sparkles, size: 14, color: AppColors.accent),
-                            const SizedBox(width: 4),
-                            Text(
-                              '+6 from last month',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent),
-                            ),
-                          ],
-                        ),
+                        if (_metric != null) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Icon(LucideIcons.sparkles, size: 14, color: AppColors.accent),
+                              const SizedBox(width: 4),
+                              Text(
+                                '+6 from last month',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.accent),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -266,12 +270,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     'GOALS',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: fg3, letterSpacing: 1.2),
                   ),
-                  Row(
-                    children: [
-                      Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent)),
-                      const SizedBox(width: 2),
-                      Icon(LucideIcons.chevronRight, size: 16, color: AppColors.accent),
-                    ],
+                  GestureDetector(
+                    onTap: _showEditProfileDialog,
+                    child: Row(
+                      children: [
+                        Text('Edit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.accent)),
+                        const SizedBox(width: 2),
+                        Icon(LucideIcons.chevronRight, size: 16, color: AppColors.accent),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -294,7 +301,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: weightDiff, 
                     value: '$goalWeight lb', 
                     isDark: isDark, 
-                    showDivider: true
+                    showDivider: true,
+                    onTap: () => _showEditNumberDialog(
+                      title: 'Edit Goal Weight',
+                      initialValue: goalWeight,
+                      suffix: 'lb',
+                      isDouble: true,
+                      onSave: (val) {
+                        if (_profile != null) _updateProfile(_profile!.copyWith(goalWeightLb: val as double));
+                      },
+                    ),
                   ),
                   _goalListItem(
                     icon: LucideIcons.zap, 
@@ -303,7 +319,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Daily limit', 
                     value: '$calorieTarget kcal', 
                     isDark: isDark, 
-                    showDivider: true
+                    showDivider: true,
+                    onTap: () => _showEditNumberDialog(
+                      title: 'Edit Calorie Target',
+                      initialValue: calorieTarget.toString(),
+                      suffix: 'kcal',
+                      isDouble: false,
+                      onSave: (val) {
+                        if (_profile != null) _updateProfile(_profile!.copyWith(calorieTarget: val as int));
+                      },
+                    ),
                   ),
                   _goalListItem(
                     icon: LucideIcons.heart, 
@@ -312,7 +337,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'General activity', 
                     value: activityLevel, 
                     isDark: isDark, 
-                    showDivider: true
+                    showDivider: true,
+                    onTap: () => _showEditDropdownDialog(
+                      title: 'Edit Activity Level',
+                      currentValue: activityLevel,
+                      options: ['Low', 'Moderate', 'High'],
+                      onSave: (val) {
+                        if (_profile != null) _updateProfile(_profile!.copyWith(activityLevel: val));
+                      },
+                    ),
                   ),
                   _goalListItem(
                     icon: LucideIcons.refreshCw, 
@@ -321,7 +354,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Nightly target', 
                     value: '$sleepGoal hr', 
                     isDark: isDark, 
-                    showDivider: true
+                    showDivider: true,
+                    onTap: () => _showEditNumberDialog(
+                      title: 'Edit Sleep Goal',
+                      initialValue: sleepGoal.toString(),
+                      suffix: 'hr',
+                      isDouble: false,
+                      onSave: (val) {
+                        if (_profile != null) _updateProfile(_profile!.copyWith(sleepGoalHr: val as int));
+                      },
+                    ),
                   ),
                   _goalListItem(
                     icon: LucideIcons.navigation, 
@@ -330,7 +372,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle: 'Training level', 
                     value: fitnessExp, 
                     isDark: isDark, 
-                    showDivider: false
+                    showDivider: false,
+                    onTap: () => _showEditDropdownDialog(
+                      title: 'Edit Fitness Experience',
+                      currentValue: fitnessExp,
+                      options: ['Beginner', 'Intermediate', 'Advanced'],
+                      onSave: (val) {
+                        if (_profile != null) _updateProfile(_profile!.copyWith(fitnessExperience: val));
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -339,6 +389,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _updateProfile(UserProfile updated) async {
+    await FirestoreService().saveUserProfile(updated);
+  }
+
+  void _showEditProfileDialog() {
+    if (_profile == null) return;
+    final nameCtrl = TextEditingController(text: _profile!.name);
+    final ageCtrl = TextEditingController(text: _profile!.age.toString());
+    final heightCtrl = TextEditingController(text: _profile!.heightInches.toString());
+    final weightCtrl = TextEditingController(text: _profile!.weightLb.toStringAsFixed(1));
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Profile'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: ageCtrl, decoration: const InputDecoration(labelText: 'Age'), keyboardType: TextInputType.number),
+              TextField(controller: heightCtrl, decoration: const InputDecoration(labelText: 'Height (inches)'), keyboardType: TextInputType.number),
+              TextField(controller: weightCtrl, decoration: const InputDecoration(labelText: 'Weight (lb)'), keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              final age = int.tryParse(ageCtrl.text) ?? _profile!.age;
+              final height = int.tryParse(heightCtrl.text) ?? _profile!.heightInches;
+              final weight = double.tryParse(weightCtrl.text) ?? _profile!.weightLb;
+              _updateProfile(_profile!.copyWith(
+                name: nameCtrl.text,
+                age: age,
+                heightInches: height,
+                weightLb: weight,
+              ));
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditNumberDialog({
+    required String title,
+    required String initialValue,
+    required String suffix,
+    required bool isDouble,
+    required void Function(num) onSave,
+  }) {
+    final controller = TextEditingController(text: initialValue);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.numberWithOptions(decimal: isDouble),
+          decoration: InputDecoration(suffixText: suffix),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final val = isDouble 
+                  ? double.tryParse(controller.text) 
+                  : int.tryParse(controller.text);
+              if (val != null) {
+                onSave(val);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditDropdownDialog({
+    required String title,
+    required String currentValue,
+    required List<String> options,
+    required void Function(String) onSave,
+  }) {
+    // If currentValue isn't in options exactly (case difference maybe), default to first.
+    String selected = options.firstWhere((o) => o.toLowerCase() == currentValue.toLowerCase(), orElse: () => options.first);
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text(title),
+            content: DropdownButton<String>(
+              value: selected,
+              isExpanded: true,
+              items: options.map((opt) => DropdownMenuItem(value: opt, child: Text(opt))).toList(),
+              onChanged: (val) {
+                if (val != null) setState(() => selected = val);
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  onSave(selected);
+                  Navigator.pop(context);
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -371,6 +550,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String value,
     required bool isDark,
     required bool showDivider,
+    VoidCallback? onTap,
   }) {
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
@@ -378,40 +558,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final fg3 = isDark ? AppColors.darkFg3 : AppColors.lightFg3;
     final iconBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(12),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20), // Matches container roughly
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 22),
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg1)),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: TextStyle(fontSize: 13, color: fg3)),
-                  ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg1)),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: TextStyle(fontSize: 13, color: fg3)),
+                    ],
+                  ),
                 ),
-              ),
-              Text(value, style: TextStyle(fontSize: 15, color: fg2)),
-              const SizedBox(width: 8),
-              Icon(LucideIcons.chevronRight, size: 18, color: fg3),
-            ],
+                Text(value, style: TextStyle(fontSize: 15, color: fg2)),
+                const SizedBox(width: 8),
+                Icon(LucideIcons.chevronRight, size: 18, color: fg3),
+              ],
+            ),
           ),
-        ),
-        if (showDivider)
-          Divider(height: 0, thickness: 1, color: border, indent: 72),
-      ],
+          if (showDivider)
+            Divider(height: 0, thickness: 1, color: border, indent: 72),
+        ],
+      ),
     );
   }
 }

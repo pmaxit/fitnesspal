@@ -1,0 +1,8 @@
+flask
+google-adk
+litellm
+pydantic
+python-dotenv
+PyYAML
+gunicorn
+google-cloud-secret-manager

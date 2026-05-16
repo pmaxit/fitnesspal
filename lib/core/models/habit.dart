@@ -13,6 +13,7 @@ class Habit {
   final String categoryColor;
   final DateTime createdAt;
   final List<DateTime> completedDates;
+  final int difficulty;
 
   const Habit({
     required this.id,
@@ -27,6 +28,7 @@ class Habit {
     required this.categoryColor,
     required this.createdAt,
     required this.completedDates,
+    this.difficulty = 1,
   });
 
   factory Habit.fromJson(Map<String, dynamic> data) {
@@ -50,6 +52,7 @@ class Habit {
               .map((e) => (e as Timestamp).toDate())
               .toList()
           : const [],
+      difficulty: data['difficulty'] as int? ?? 1,
     );
   }
 
@@ -67,6 +70,7 @@ class Habit {
       'createdAt': Timestamp.fromDate(createdAt),
       'completedDates':
           completedDates.map((e) => Timestamp.fromDate(e)).toList(),
+      'difficulty': difficulty,
     };
   }
 
@@ -83,6 +87,7 @@ class Habit {
     String? categoryColor,
     DateTime? createdAt,
     List<DateTime>? completedDates,
+    int? difficulty,
   }) {
     return Habit(
       id: id ?? this.id,
@@ -97,6 +102,7 @@ class Habit {
       categoryColor: categoryColor ?? this.categoryColor,
       createdAt: createdAt ?? this.createdAt,
       completedDates: completedDates ?? this.completedDates,
+      difficulty: difficulty ?? this.difficulty,
     );
   }
 }

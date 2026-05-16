@@ -101,3 +101,5 @@ coverage/
 .sisyphus/evidence/
 
 scripts/serviceAccountKey.json
+.env
+**/.env

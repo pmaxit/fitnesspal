@@ -75,9 +75,6 @@ class FirestoreService {
   CollectionReference<Map<String, dynamic>> get _habitsCollection =>
       _db.collection('users/$_userId/habits');
 
-  CollectionReference<Map<String, dynamic>> get _scoresCollection =>
-      _db.collection('users/$_userId/scores');
-
   // ------------------------------------------------------------------
   // User Profile
   // ------------------------------------------------------------------
@@ -239,6 +236,15 @@ class FirestoreService {
   Future<void> addHabit(Habit habit) async {
     try {
       await _habitsCollection.add(habit.toJson());
+    } on FirebaseException {
+      // Silently absorb.
+    }
+  }
+
+  /// Update an existing habit document.
+  Future<void> updateHabit(Habit habit) async {
+    try {
+      await _habitsCollection.doc(habit.id).update(habit.toJson());
     } on FirebaseException {
       // Silently absorb.
     }

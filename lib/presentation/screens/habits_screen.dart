@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fitnesspal/core/theme/colors.dart';
 import 'package:fitnesspal/core/services/firestore_service.dart';
+import 'package:fitnesspal/core/services/ai_service.dart';
 import 'package:fitnesspal/core/models/habit.dart';
+import 'dart:async';
 
 class HabitsScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -56,7 +58,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
     // Calculate stats
     final totalHabits = _habits.length;
     final completedToday = _habits.where((h) => h.isCompleted).length;
-    const consistency = 87; // Mocked for now, could be calculated from completedDates
+    const consistency = 0; // Reset from 87 to 0 for new user state
     final currentStreak = _habits.isEmpty ? 0 : _habits.map((h) => h.streakValue).reduce((a, b) => a > b ? a : b);
     final recordStreak = _habits.isEmpty ? 0 : _habits.map((h) => h.recordStreak).reduce((a, b) => a > b ? a : b);
 
@@ -69,7 +71,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              _buildHeader(context, completedToday, totalHabits, consistency, fg1, fg2, fg3),
+              _buildHeader(context, completedToday, totalHabits, consistency, currentStreak, fg1, fg2, fg3),
               const SizedBox(height: 24),
               _buildStreakHero(context, currentStreak, recordStreak, isDark),
               const SizedBox(height: 24),
@@ -86,12 +88,12 @@ class _HabitsScreenState extends State<HabitsScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, int done, int total, int consistency, Color fg1, Color fg2, Color fg3) {
+  Widget _buildHeader(BuildContext context, int done, int total, int consistency, int currentStreak, Color fg1, Color fg2, Color fg3) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'APRIL 2026 • 7-DAY STREAK',
+          'APRIL 2026 • $currentStreak-DAY STREAK',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
@@ -115,7 +117,12 @@ class _HabitsScreenState extends State<HabitsScreen> {
               children: [
                 _iconButton(LucideIcons.sliders, widget.isDarkMode),
                 const SizedBox(width: 12),
-                _iconButton(LucideIcons.plus, widget.isDarkMode, isAccent: true),
+                _iconButton(
+                  LucideIcons.plus,
+                  widget.isDarkMode,
+                  isAccent: true,
+                  onTap: () => _showAddHabitModal(context),
+                ),
               ],
             ),
           ],
@@ -133,26 +140,29 @@ class _HabitsScreenState extends State<HabitsScreen> {
     );
   }
 
-  Widget _iconButton(IconData icon, bool isDark, {bool isAccent = false}) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: isAccent ? AppColors.accent : (isDark ? AppColors.darkBgCard : Colors.white),
-        borderRadius: BorderRadius.circular(12),
-        border: isAccent ? null : Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
-        boxShadow: isAccent ? [
-          BoxShadow(
-            color: AppColors.accent.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          )
-        ] : null,
-      ),
-      child: Icon(
-        icon,
-        color: isAccent ? Colors.white : (isDark ? Colors.white : Colors.black),
-        size: 22,
+  Widget _iconButton(IconData icon, bool isDark, {bool isAccent = false, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: isAccent ? AppColors.accent : (isDark ? AppColors.darkBgCard : Colors.white),
+          borderRadius: BorderRadius.circular(12),
+          border: isAccent ? null : Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+          boxShadow: isAccent ? [
+            BoxShadow(
+              color: AppColors.accent.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            )
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          color: isAccent ? Colors.white : (isDark ? Colors.white : Colors.black),
+          size: 22,
+        ),
       ),
     );
   }
@@ -244,16 +254,31 @@ class _HabitsScreenState extends State<HabitsScreen> {
     ];
 
     // Map day to intensity based on image
+    // Calculate intensity based on actual habit completion dates
     int getIntensity(int day) {
       if (day == -1) return -1;
-      final completed = [1, 2, 4, 5, 6, 7, 8, 11, 12, 14];
-      if (completed.contains(day)) {
-        if ([1, 2, 7, 14].contains(day)) return 4; // All/Most
-        if ([4, 5, 6, 8, 11, 12].contains(day)) return 3; // Some/Most
-        return 2;
+      
+      // Get the month/year we are currently viewing (April 2026 based on UI)
+      // Note: In a real app, this would be dynamic based on current month view
+      final date = DateTime(2026, 4, day);
+      
+      int completedCount = 0;
+      for (final habit in _habits) {
+        final wasCompleted = habit.completedDates.any((d) => 
+          d.year == date.year && d.month == date.month && d.day == date.day
+        );
+        if (wasCompleted) completedCount++;
       }
-      if (day < 15) return 1; // Light
-      return 0; // None
+      
+      if (completedCount == 0) return 0;
+      
+      // Calculate intensity (0-4) based on percentage of habits completed
+      if (_habits.isEmpty) return 0;
+      final percentage = completedCount / _habits.length;
+      if (percentage >= 1.0) return 4; // All
+      if (percentage >= 0.7) return 3; // Most
+      if (percentage >= 0.4) return 2; // Some
+      return 1; // Light
     }
 
     return Container(
@@ -410,66 +435,69 @@ class _HabitsScreenState extends State<HabitsScreen> {
     final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
     final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isDark ? AppColors.darkBorder.withOpacity(0.5) : AppColors.lightBorder),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => FirestoreService().toggleHabit(habit.id),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: habit.isCompleted ? AppColors.accent : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: habit.isCompleted ? AppColors.accent : (isDark ? AppColors.darkBorderStrong : Colors.grey[300]!),
-                  width: 2,
+    return GestureDetector(
+      onTap: () => _showAddHabitModal(context, habit: habit),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isDark ? AppColors.darkBorder.withOpacity(0.5) : AppColors.lightBorder),
+        ),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => FirestoreService().toggleHabit(habit.id),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: habit.isCompleted ? AppColors.accent : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: habit.isCompleted ? AppColors.accent : (isDark ? AppColors.darkBorderStrong : Colors.grey[300]!),
+                    width: 2,
+                  ),
                 ),
+                child: habit.isCompleted
+                    ? Icon(LucideIcons.check, color: Colors.white, size: 18)
+                    : null,
               ),
-              child: habit.isCompleted
-                  ? Icon(LucideIcons.check, color: Colors.white, size: 18)
-                  : null,
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: _parseColor(habit.categoryColor),
-                        shape: BoxShape.circle,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _parseColor(habit.categoryColor),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      habit.name,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: fg1),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  habit.description,
-                  style: TextStyle(fontSize: 13, color: fg2),
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Text(
+                        habit.name,
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: fg1),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    habit.description,
+                    style: TextStyle(fontSize: 13, color: fg2),
+                  ),
+                ],
+              ),
             ),
-          ),
-          _streakBadge(habit.streakValue, isDark),
-        ],
+            _streakBadge(habit.streakValue, isDark),
+          ],
+        ),
       ),
     );
   }
@@ -491,6 +519,250 @@ class _HabitsScreenState extends State<HabitsScreen> {
           ),
         ],
       ),
+    );
+  }
+  void _showAddHabitModal(BuildContext context, {Habit? habit}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _AddHabitBottomSheet(isDarkMode: widget.isDarkMode, habit: habit),
+    );
+  }
+}
+
+class _AddHabitBottomSheet extends StatefulWidget {
+  final bool isDarkMode;
+  final Habit? habit;
+
+  const _AddHabitBottomSheet({required this.isDarkMode, this.habit});
+
+  @override
+  State<_AddHabitBottomSheet> createState() => _AddHabitBottomSheetState();
+}
+
+class _AddHabitBottomSheetState extends State<_AddHabitBottomSheet> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+  late String _aiGoal;
+  late int _aiDifficulty;
+  bool _isAnalyzing = false;
+  final AiService _aiService = AiService();
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.habit?.name);
+    _descriptionController = TextEditingController(text: widget.habit?.description);
+    _aiGoal = widget.habit?.goal ?? "Type to see goal...";
+    _aiDifficulty = widget.habit?.difficulty ?? 1;
+    
+    _titleController.addListener(_onInputChanged);
+    _descriptionController.addListener(_onInputChanged);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  void _onInputChanged() {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (_titleController.text.isNotEmpty || _descriptionController.text.isNotEmpty) {
+        _analyzeHabit();
+      }
+    });
+  }
+
+
+  Future<void> _analyzeHabit() async {
+    setState(() {
+      _isAnalyzing = true;
+    });
+
+    final result = await _aiService.analyzeHabit(
+      _titleController.text,
+      _descriptionController.text,
+    );
+
+    if (mounted) {
+      setState(() {
+        _aiGoal = result['goal'] ?? "No goal found";
+        final rawDifficulty = result['difficulty'];
+        if (rawDifficulty is int) {
+          _aiDifficulty = rawDifficulty;
+        } else if (rawDifficulty is String) {
+          switch (rawDifficulty.toLowerCase()) {
+            case 'easy': _aiDifficulty = 1; break;
+            case 'moderate': _aiDifficulty = 3; break;
+            case 'hard': _aiDifficulty = 5; break;
+            default: _aiDifficulty = int.tryParse(rawDifficulty) ?? 1;
+          }
+        } else {
+          _aiDifficulty = 1;
+        }
+        _isAnalyzing = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDarkMode;
+    final bg = isDark ? AppColors.darkBgApp : Colors.white;
+    final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
+    final cardBg = isDark ? AppColors.darkBgCard : Colors.grey[100]!;
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkBorder : Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            widget.habit == null ? 'New Habit' : 'Edit Habit',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: fg1),
+          ),
+          const SizedBox(height: 24),
+          _buildTextField('Title', 'e.g. Morning Run', _titleController, isDark),
+          const SizedBox(height: 16),
+          _buildTextField('Description', 'Why this habit?', _descriptionController, isDark, maxLines: 3),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: isDark ? AppColors.darkBorder : Colors.transparent),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('AI ANALYSIS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: fg2, letterSpacing: 1.0)),
+                    if (_isAnalyzing)
+                      const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Goal: $_aiGoal',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: fg1),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Text('Difficulty: ', style: TextStyle(fontSize: 13, color: fg2)),
+                    ...List.generate(5, (index) => Icon(
+                      LucideIcons.star,
+                      size: 14,
+                      color: index < _aiDifficulty ? Colors.orange : (isDark ? AppColors.darkBorder : Colors.grey[300]),
+                    )),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _titleController.text.isEmpty ? null : () async {
+                if (widget.habit == null) {
+                  final newHabit = Habit(
+                    id: '', // Firestore will generate this
+                    name: _titleController.text,
+                    description: _descriptionController.text,
+                    goal: _aiGoal,
+                    streak: '0 days',
+                    streakValue: 0,
+                    recordStreak: 0,
+                    isCompleted: false,
+                    iconColor: '#10B981',
+                    categoryColor: '#10B981',
+                    createdAt: DateTime.now(),
+                    completedDates: [],
+                    difficulty: _aiDifficulty,
+                  );
+                  await FirestoreService().addHabit(newHabit);
+                } else {
+                  final updatedHabit = widget.habit!.copyWith(
+                    name: _titleController.text,
+                    description: _descriptionController.text,
+                    goal: _aiGoal,
+                    difficulty: _aiDifficulty,
+                  );
+                  await FirestoreService().updateHabit(updatedHabit);
+                }
+                if (mounted) Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 0,
+              ),
+              child: Text(
+                widget.habit == null ? 'Create Habit' : 'Update Habit',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, String hint, TextEditingController controller, bool isDark, {int maxLines = 1}) {
+    final fg1 = isDark ? AppColors.darkFg1 : AppColors.lightFg1;
+    final fg2 = isDark ? AppColors.darkFg2 : AppColors.lightFg2;
+    final bg = isDark ? AppColors.darkBgCard : Colors.grey[100]!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: fg2)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: TextStyle(color: fg1, fontSize: 16),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: fg2.withOpacity(0.5)),
+            filled: true,
+            fillColor: bg,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
     );
   }
 }
