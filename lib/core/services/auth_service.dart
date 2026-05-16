@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -53,12 +55,19 @@ class AuthService {
 
   Future<UserCredential?> signInWithApple() async {
     try {
+      final WebAuthenticationOptions webOptions = WebAuthenticationOptions(
+        clientId: 'com.fitnesspal.app',
+        redirectUri: Platform.isAndroid
+            ? Uri.parse('https://fitnesspal-app.firebaseapp.com/__/auth/handler')
+            : Uri.parse('com.fitnesspal.app:/'),
+      );
       final AuthorizationCredentialAppleID appleCredential =
           await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        webAuthenticationOptions: webOptions,
       );
       final AuthCredential credential = OAuthProvider('apple.com').credential(
         idToken: appleCredential.identityToken,
@@ -66,7 +75,7 @@ class AuthService {
       );
       return await _auth.signInWithCredential(credential);
     } catch (e) {
-      print('Apple sign in error: $e');
+      debugPrint('Apple sign in error: $e');
       return null;
     }
   }
